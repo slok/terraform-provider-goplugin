@@ -3,7 +3,7 @@ module github.com/slok/terraform-provider-goplugin
 go 1.19
 
 require (
-	github.com/hashicorp/terraform-plugin-framework v0.11.0
+	github.com/hashicorp/terraform-plugin-framework v0.11.1
 	github.com/hashicorp/terraform-plugin-go v0.14.0
 	github.com/stretchr/testify v1.8.0
 )
