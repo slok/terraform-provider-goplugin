@@ -10,7 +10,7 @@ import (
 type nonEmptyString bool
 
 func (n nonEmptyString) Description(ctx context.Context) string         { return "" }
-func (n nonEmptyString) MarkdownDescription(ctx context.Context) string { return "" }
+func (n nonEmptyString) MarkdownDescription(ctx context.Context) string { return n.Description(ctx) }
 
 func (n nonEmptyString) Validate(ctx context.Context, req tfsdk.ValidateAttributeRequest, resp *tfsdk.ValidateAttributeResponse) {
 	var s types.String

@@ -16,13 +16,9 @@ type defaultValue struct {
 	defaultValue attr.Value
 }
 
-func (d *defaultValue) Description(ctx context.Context) string {
-	return "If the config does not contain a value, a default will be set using defaultValue."
-}
+func (d *defaultValue) Description(ctx context.Context) string { return "" }
 
-func (d *defaultValue) MarkdownDescription(ctx context.Context) string {
-	return d.Description(ctx)
-}
+func (d *defaultValue) MarkdownDescription(ctx context.Context) string { return d.Description(ctx) }
 
 // Modify checks that the value of the attribute in the configuration and assigns the default value if
 // the value in the config is null. This is a destructive operation in that it will overwrite any value
