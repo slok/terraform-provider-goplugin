@@ -46,12 +46,12 @@ func (s suppressEquivalentJSON) isEqualJSON(old, new string) bool {
 		return false
 	}
 
-	var o1 interface{}
+	var o1 any
 	if err := json.Unmarshal(ob.Bytes(), &o1); err != nil {
 		return false
 	}
 
-	var o2 interface{}
+	var o2 any
 	if err := json.Unmarshal(nb.Bytes(), &o2); err != nil {
 		return false
 	}
