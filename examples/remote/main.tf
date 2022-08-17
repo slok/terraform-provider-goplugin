@@ -10,7 +10,10 @@ provider goplugin {
   resource_plugins_v1 = {
     "os_file": {
       source_code = {
-        data = [for f in fileset("./", "plugins/resource_os_file/*"): file(f)]
+        git = {
+          url = "https://github.com/slok/terraform-provider-goplugin"
+          paths_regex = ["examples/os_file/plugins/resource_os_file/*"]
+        } 
       }
       configuration =  jsonencode({})
     }

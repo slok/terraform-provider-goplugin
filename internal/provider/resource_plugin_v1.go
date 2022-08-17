@@ -95,6 +95,11 @@ func (r resourcePluginV1) Create(ctx context.Context, req resource.CreateRequest
 		return
 	}
 
+	if pluginResp.ID == "" {
+		resp.Diagnostics.AddError("Plugin didn't return ID", fmt.Sprintf("On resource creation the plugin %q must return an ID, it didn't.", tfResourcePlan.PluginID.Value))
+		return
+	}
+
 	// Create correct ID.
 	id := r.packID(tfResourcePlan.PluginID.Value, pluginResp.ID)
 

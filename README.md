@@ -34,7 +34,7 @@ Unless... in the cases where we don't need to manage tons of resources or its a 
 
 ## Plugins `v1`
 
-Here are the [Go docs][godoc-v1]
+Here are the API [Go docs][godoc-v1]
 
 ### Resource
 
@@ -138,7 +138,7 @@ terraform plan
 [gh-provider]: https://registry.terraform.io/providers/integrations/github/latest/docs
 [gist]: https://gist.github.com/
 [computed]: https://www.terraform.io/plugin/sdkv2/schemas/schema-behaviors#computed
-[godoc-v1]: https://TODO
-[apiv1-factory-method-godoc]: https://TODO
-[apiv1-interface-godoc]: https://TODO
-[apiv1-testing-method-godoc]: https://TODO
+[godoc-v1]: https://pkg.go.dev/github.com/slok/terraform-provider-goplugin/pkg/api/v1
+[apiv1-factory-method-godoc]: https://pkg.go.dev/github.com/slok/terraform-provider-goplugin/pkg/api/v1#NewResourcePlugin
+[apiv1-interface-godoc]: https://pkg.go.dev/github.com/slok/terraform-provider-goplugin/pkg/api/v1#ResourcePlugin
+[apiv1-testing-method-godoc]: https://pkg.go.dev/github.com/slok/terraform-provider-goplugin/pkg/api/v1/testing
