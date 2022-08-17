@@ -69,3 +69,12 @@ type ResourcePlugin interface {
 	// - Deleting the resource using the ID.
 	DeleteResource(ctx context.Context, r DeleteResourceRequest) (*DeleteResourceResponse, error)
 }
+
+// NewResourcePlugin is the function that the plugin engine will load and run to get the plugin that
+// will be executed afterwards. E.g:
+//
+//	func NewResourcePlugin(options string) (apiv1.ResourcePlugin, error) {
+//		//...
+//		return myPlugin{}, nil
+//	}
+type NewResourcePlugin = func(options string) (ResourcePlugin, error)

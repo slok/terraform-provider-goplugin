@@ -99,11 +99,7 @@ func (f *Factory) pluginIndex(ctx context.Context, pluginSource []string, plugin
 	return fmt.Sprintf("%x", sha)
 }
 
-// newResourcePlugin is the function the plugins need to have to be able to instantiate a
-// new plugin.
-type newResourcePlugin = func(options string) (apiv1.ResourcePlugin, error)
-
-func loadRawResourcePluginFactory(ctx context.Context, srcs []string) (newResourcePlugin, error) {
+func loadRawResourcePluginFactory(ctx context.Context, srcs []string) (apiv1.NewResourcePlugin, error) {
 	// Create our plugin memory FS with the plugin sources in a plugin dir.
 	mapFS := map[string]*fstest.MapFile{}
 	for i, src := range srcs {
@@ -132,7 +128,7 @@ func loadRawResourcePluginFactory(ctx context.Context, srcs []string) (newResour
 		return nil, fmt.Errorf("could not get plugin: %w", err)
 	}
 
-	pluginFunc, ok := pluginFuncTmp.Interface().(newResourcePlugin)
+	pluginFunc, ok := pluginFuncTmp.Interface().(apiv1.NewResourcePlugin)
 	if !ok {
 		return nil, fmt.Errorf("invalid plugin type")
 	}
