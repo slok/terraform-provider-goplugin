@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"io/fs"
+	"os"
 	"regexp"
 	"sort"
 	"strings"
@@ -142,6 +143,7 @@ func loadRawResourcePluginFactory(ctx context.Context, srcs []string) (newResour
 func newYaegiInterpreter(fs fs.FS) (*interp.Interpreter, error) {
 	i := interp.New(interp.Options{
 		SourcecodeFilesystem: fs,
+		Env:                  os.Environ(),
 	})
 
 	// Add standard library.
