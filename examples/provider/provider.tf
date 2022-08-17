@@ -10,7 +10,9 @@ terraform {
 provider goplugin { 
   resource_plugins_v1 = {
     "github_gist": {
-      source_code = [for f in fileset("./", "plugins/resource_gist/*"): file(f)]
+      source_code = {
+        data = [for f in fileset("./", "plugins/resource_gist/*"): file(f)]
+      }
       configuration =  jsonencode({
         api_url = "https://api.github.com"
       })

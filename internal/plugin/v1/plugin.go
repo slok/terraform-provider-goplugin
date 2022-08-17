@@ -15,6 +15,7 @@ import (
 	"github.com/traefik/yaegi/interp"
 	"github.com/traefik/yaegi/stdlib"
 
+	"github.com/slok/terraform-provider-goplugin/internal/plugin/storage"
 	"github.com/slok/terraform-provider-goplugin/internal/plugin/v1/yaegicustom"
 	apiv1 "github.com/slok/terraform-provider-goplugin/pkg/api/v1"
 )
@@ -24,13 +25,18 @@ type Factory struct {
 }
 
 // NewFactory returns a new plugin V1 factory.
-func NewFactory() Factory {
-	return Factory{}
+func NewFactory() *Factory {
+	return &Factory{}
 }
 
 // NewResourcePlugin returns a new plugin based on the plugin source code and the plugin options that will be passed on plugin creation.
 // the resulting plugin will be able to be used.
-func (f *Factory) NewResourcePlugin(ctx context.Context, pluginSource []string, pluginOptions string) (apiv1.ResourcePlugin, error) {
+func (f *Factory) NewResourcePlugin(ctx context.Context, srcRepo storage.SourceCodeRepository, pluginOptions string) (apiv1.ResourcePlugin, error) {
+	pluginSource, err := srcRepo.GetSourceCode(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("could not get plugin source code: %w", err)
+	}
+
 	// Sanitize plugin source files like validating and ignoring files that should not be loaded.
 	sanitizedPluginSource, err := f.sanitizedPluginSource(ctx, pluginSource)
 	if err != nil {

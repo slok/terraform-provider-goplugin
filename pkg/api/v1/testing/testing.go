@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/slok/terraform-provider-goplugin/internal/plugin/storage"
 	pluginv1 "github.com/slok/terraform-provider-goplugin/internal/plugin/v1"
 	apiv1 "github.com/slok/terraform-provider-goplugin/pkg/api/v1"
 )
@@ -36,5 +37,5 @@ func NewTestResourcePlugin(ctx context.Context, pluginDir string, options string
 
 	// Create resource plugin.
 	f := pluginv1.NewFactory()
-	return f.NewResourcePlugin(ctx, data, options)
+	return f.NewResourcePlugin(ctx, storage.DataSourceCodeRepository(data), options)
 }

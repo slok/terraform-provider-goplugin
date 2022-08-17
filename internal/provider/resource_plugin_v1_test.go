@@ -24,7 +24,9 @@ terraform {
 provider goplugin { 
   resource_plugins_v1 = {
     "test_file": {
-      source_code = [file("testdata/file_plugin/plugin.go")]
+      source_code = {
+		data = [file("testdata/file_plugin/plugin.go")]
+	  }
       configuration =  jsonencode({})
     }
   }

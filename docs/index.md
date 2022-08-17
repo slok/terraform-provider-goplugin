@@ -57,7 +57,9 @@ terraform {
 provider goplugin { 
   resource_plugins_v1 = {
     "github_gist": {
-      source_code = [for f in fileset("./", "plugins/resource_gist/*"): file(f)]
+      source_code = {
+        data = [for f in fileset("./", "plugins/resource_gist/*"): file(f)]
+      }
       configuration =  jsonencode({
         api_url = "https://api.github.com"
       })
@@ -93,4 +95,24 @@ resource "goplugin_plugin_v1" "github_gist_test" {
 Required:
 
 - `configuration` (String, Sensitive) A JSON string object with the properties that will be passed to the plugin creation/initialization, the plugin is responsible of knowing how to load and use these properties (e.g: API tokens).
-- `source_code` (List of String) The Source code of the plugin, allows multiple file data but must be of the same package.
+- `source_code` (Attributes) Configuration regarding where the plugin code will be loaded from. Only one must be used of all the methods available (see [below for nested schema](#nestedatt--resource_plugins_v1--source_code))
+
+<a id="nestedatt--resource_plugins_v1--source_code"></a>
+### Nested Schema for `resource_plugins_v1.source_code`
+
+Optional:
+
+- `data` (List of String) Raw content data of the plugins.
+- `git` (Attributes) Git repository to get the plugin source data from. (see [below for nested schema](#nestedatt--resource_plugins_v1--source_code--git))
+
+<a id="nestedatt--resource_plugins_v1--source_code--git"></a>
+### Nested Schema for `resource_plugins_v1.source_code.git`
+
+Required:
+
+- `paths_regex` (List of String) List of regex that will match the files that will be loaded as the plugin source data.
+- `url` (String) URL of the repository.
+
+Optional:
+
+- `ref` (String) Reference of the the repository, only Branch and tags are supported.
