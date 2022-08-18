@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [v0.1.1] - 2022-08-18
+
+## Fixed
+
+- Terraform import docs.
+
 ## [v0.1.0] - 2022-08-18
 
 ### Added
@@ -18,5 +24,6 @@
 - Documentation.
 
 
-[unreleased]: https://github.com/slok/terraform-provider-goplugin/compare/v0.1.0...HEAD
+[unreleased]: https://github.com/slok/terraform-provider-goplugin/compare/v0.1.1...HEAD
+[v0.1.1]: https://github.com/slok/terraform-provider-goplugin/compare/v0.1.0...v0.1.1
 [v0.1.0]: https://github.com/slok/terraform-provider-goplugin/releases/tag/v0.1.0
