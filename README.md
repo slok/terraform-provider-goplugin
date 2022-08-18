@@ -24,6 +24,7 @@ Unless... in the cases where we don't need to manage tons of resources or its a 
 - You want ot manage private/internal APIs with Terraform.
 - You don't want/need to understand low level Terraform concepts.
 - A simple plugin that communicates with an API and marshal/unmarshal JSON is enough for you.
+- Prototyping, MVPs and exploring ideas around terraform provider development.
 
 ### When NOT to use it
 
