@@ -31,29 +31,13 @@ type tfProvider struct {
 func (p *tfProvider) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Description: `
-The Go plugin provider is used to create dynamically Terraform providers using small go plugins (provider inception!).
+A Terraform provider to create terraform providers 🤯, but easier and faster!
 
-It removes all the complexity and bootstrapping that has a regular Terraform provider development, however this comes with some
-limitations. So depends on your use case this may be handy.
+Terraform go plugin provider is a Terraform provider that will let you execute Go plugins (using [yaegi](https://github.com/traefik/yaegi)) in terraform by implementing a very simple and small Go API.
 
-The plugins based providers, are similar to the regular Terraform providers but differ somehow:
-
-- Not compiled: We load Go plugins at runtime using Yaegi.
-- No third party tools allowed: Only standard golang library and this provider libraries.
-- Configuration of the provider and resources are based on JSON strings: Very dynamic, flexible and Go and Terraform have first class support for marshal/unmarshaling easily.
-- Simplified small API: Designed and implemented focusing on maintainability, easy development and lowering the need of a user understanding low level terraform concepts.
-
-## Plugins
-
-TODO
-
-## When to use it
-
-TODO.
-
-## Terraform cloud
-
-The provider is portable, it's compatible with terraform cloud workers out of the box.
+- Check all full documentation on the repository [readme](https://github.com/slok/terraform-provider-goplugin).
+- Check the [examples](https://github.com/slok/terraform-provider-goplugin/tree/main/examples) to see how to develop your own plugins.
+- Check [Go v1 lib](https://pkg.go.dev/github.com/slok/terraform-provider-goplugin/pkg/api/v1).
 `,
 		Attributes: map[string]tfsdk.Attribute{
 			"resource_plugins_v1": {

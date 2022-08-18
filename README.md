@@ -8,7 +8,7 @@
 
 A Terraform provider to create terraform providers 🤯, but easier and faster!
 
-Terraform go plugin provider is a Terraform provider that will let you execute Go plugins (using [yaegi]) in terraform by implemeting a very simple and small Go API.
+Terraform go plugin provider is a Terraform provider that will let you execute Go plugins (using [yaegi]) in terraform by implementing a very simple and small Go API.
 
 ## Why
 
@@ -21,10 +21,11 @@ Unless... in the cases where we don't need to manage tons of resources or its a 
 ### When to use it
 
 - A terraform provider doesn't have support of the resource you need (e.g [Github provider][gh-provider] doesn't have [gist] support).
-- You want ot manage private/internal APIs with Terraform.
+- You want to manage private/internal APIs with Terraform.
 - You don't want/need to understand low level Terraform concepts.
 - A simple plugin that communicates with an API and marshal/unmarshal JSON is enough for you.
 - Prototyping, MVPs and exploring ideas around terraform provider development.
+- Implement private terraform providers for your company/organization
 
 ### When NOT to use it
 
@@ -35,7 +36,8 @@ Unless... in the cases where we don't need to manage tons of resources or its a 
 
 ## Plugins `v1`
 
-Here are the API [Go docs][godoc-v1]
+- API [Go docs][godoc-v1].
+- [Examples][examples].
 
 ### Resource
 
@@ -143,3 +145,4 @@ terraform plan
 [apiv1-factory-method-godoc]: https://pkg.go.dev/github.com/slok/terraform-provider-goplugin/pkg/api/v1#NewResourcePlugin
 [apiv1-interface-godoc]: https://pkg.go.dev/github.com/slok/terraform-provider-goplugin/pkg/api/v1#ResourcePlugin
 [apiv1-testing-method-godoc]: https://pkg.go.dev/github.com/slok/terraform-provider-goplugin/pkg/api/v1/testing
+[examples]: https://github.com/slok/terraform-provider-goplugin/tree/main/examples
