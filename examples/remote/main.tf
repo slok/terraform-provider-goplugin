@@ -12,23 +12,28 @@ provider goplugin {
       source_code = {
         git = {
           url = "https://github.com/slok/terraform-provider-goplugin"
-          paths_regex = ["examples/os_file/plugins/resource_os_file/*"]
+          paths_regex = ["examples/os_file/plugins/.*\\.go"]
         } 
       }
       configuration =  jsonencode({})
+    }
+    "github_gist": {
+      source_code = {
+        git = {
+          url = "https://github.com/slok/terraform-provider-goplugin"
+          paths_regex = ["examples/github_gist/plugins/.*\\.go"]
+        } 
+      }
+      configuration =  jsonencode({}) // TF_GITHUB_TOKEN from env var.
     }
   }
 }
 
 locals {
     files = {
-        "/tmp/tf-test1.txt": "test-1"
-        "/tmp/tf-test2.txt": "test-2"
-        "/tmp/tf-test3.txt": "test-3"
-        "/tmp/tf-test4.txt": "test-4"
-        "/tmp/tf-test5.txt": "test-5"
-        "/tmp/tf-test6.txt": "test-6"
-        "/tmp/tf-test7.txt": "test-7"
+        "tf-test1.txt": "test-1"
+        "tf-test2.txt": "test-2"
+        "tf-test3.txt": "test-3"
     }
 }
 
@@ -37,8 +42,19 @@ resource "goplugin_plugin_v1" "os_file_test" {
   
   plugin_id = "os_file"
   resource_data = jsonencode({
-    path = each.key
+    path = "/tmp/${each.key}"
     content = each.value
     mode = 644
+  })
+}
+
+resource "goplugin_plugin_v1" "github_gist_test" {
+  for_each = local.files
+  
+  plugin_id = "github_gist"
+  resource_data = jsonencode({
+    description = "Managed by terraform."
+    public = true
+    files = {"${each.key}": each.value}
   })
 }
