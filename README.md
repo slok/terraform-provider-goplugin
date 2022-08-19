@@ -34,6 +34,10 @@ Unless... in the cases where we don't need to manage tons of resources or its a 
 - You need Go third party libraries (this smells like a complex use case).
 - You need to provide official Terraform support for a product.
 
+## Examples
+
+Check [examples](./examples)
+
 ## Plugins `v1`
 
 - API [Go docs][godoc-v1].
@@ -79,42 +83,55 @@ func (p plugin) UpdateResource(ctx context.Context, r apiv1.UpdateResourceReques
 }
 ```
 
+## Important concepts
+
+### IDs
+
+Resources will have 2 ids:
+
+The common Terraform ID that it's used internally by terraform to identify
+the terraform resource, to refer to that tf resource in the HCL code and to import the resource into terraform.
+
+And the resource ID itself, the one that identifies teh resource Id outside terraform (e.g a User ID
+in a rest API). Normally this ID is the one you want to use to get information of the resource by using it
+in a datasource.
+
+> **Warning**
+> `plugin_id` it's part of the Terraform identifier, this attribute should not change, if it changes, resource will be recreated.
+
+### Plugin design and limitations
+
+Plugin have some limitations, some imposed by the engine itself, [Yaegi], and other ones imposed by this provider
+design in favor of simplicity and portability:
+
+- No third party packages (external libraries) supported.
+- Flat source code (no nested packages) and in a single package.
+- Allow splitting code in multiple files.
+- Small and simple API: Less features, more reliable and easy to maintain.
+- Automatically ignore plugin tests (package `_test`) on plugin load.
+
+### JSON input/output
+
+Instead of using `interface{}`/`any` for the data that is being passed and returned in the plugins, we decided to treat the plugins as another remote API, and use a common way that its an standard on communication, JSON.
+
+This although less performant and a bit more verbose, benefits the plugin reliability and portability making them less brittle to changes and unknown side effects of magical auto encode/decode. Apart from this:
+
+- Go standard library has native support and is well tested.
+- Terraform has native support and by using `jsonencode`/`jsondecode` to use it in HCL code and see changes on plans.
+
+### No computed data from plugins
+
+[Computed] attributes are static attributes that are generated at the creation or the import phase of a resource, this data once generated can't change.
+
+Giving the ability the user to return this data from the plugins, could make the plugins return different data on each run, making Terraform break.
+
+So, to ease the user plugin development and usage, we decided to avoid computed data on plugins, and instead add support for plugin data sources in case users need to get extra data from a resource.
+
+This is less performant, as a data source will fetch data every time, but its more reliable and less brittle, avoiding shoot ourselves in the foot.
+
 ## Requirements
 
 - Terraform `>=1.x`.
-
-## Design decisions
-
-- String JSON as input data
-  - The same we we communicate with APIs.
-  - JSON is a first class citizen in Go and Terraform out of the box.
-  - JSON is very dynamic, perfect for plugins that can receive/return anything as resource data/configuration.
-- Avoided using result data ([computed]).
-  - Computed data is very static, goes against the dynamism of the Go plugins
-  - Once stored, it is hard to change.
-  - Is the root of lots of provider bugs and problems, so we avoid users creating those mistakes
-  - Embrace data sources instead, less efficient (get real data instead of getting from state), but more reliable and flexible.
-- No optimizations (we are already using interpreted code).
-  - JSON marshall/unmarshall of input/output data
-  - Use data-sources instead of computed fields
-  - If optimization needed, create a regular Terraform provider.
-- No support for external libraries.
-  - More portable plugins.
-  - Less Plugin engine bugs.
-- Allow splitting code into multiple files
-  - Easier to read and maintain.
-  - Share helper utils between plugins.
-- Plugins created at provider loading time.
-- Simplicity and reliability by reducing features and setting conventions.
-  - Small and simple API.
-- Terraform cloud support.
-  - When Plugins are loaded/created, these could download a binary if required.
-- Ignore plugin tests (package `_test`) on plugin load
-  - Avoid the user the need to ignore specific go files in a directory.
-- A Resource Plugin ID is not mutable.
-  - Changing requires resource recreation.
-  - Used as part of the Terraform resource ID `{PLUGIN_ID}/{RESOURCE_ID}`.
-  - Avoid pitfalls of reusing the same data with different plugins and end in a corrupt state.
 
 ## Terraform cloud
 

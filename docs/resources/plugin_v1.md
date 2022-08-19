@@ -43,12 +43,18 @@ resource "goplugin_plugin_v1" "os_file_test" {
 
 ### Required
 
-- `plugin_id` (String) The ID of the plugin to use, must be loaded and registered by the provider. To avoid inconsistencies, if changed the resource will be recreated.
-- `resource_data` (String) A JSON string object with the properties that will be passed to the plugin resource, the plugin is responsible of knowing how to load and use these properties.
+- `plugin_id` (String) The ID of the plugin to use, must be loaded and registered by the provider.
+							    To avoid inconsistencies, if changed the resource will be recreated.
+- `resource_data` (String) A JSON string object with the properties that will be passed to the plugin
+								resource, the plugin is responsible of knowing how to load and use these properties.
 
 ### Read-Only
 
-- `id` (String) The resource ID, normally managed by terraform and the plugins logic.
+- `id` (String) The ID of the terraform resource, also used on the import resource actions, it's composed by other 2 attributes in a specific format: `{plugin_id}/{resource_id}`.
+- `resource_id` (String) The ID of the resource itself (outside terraform), it's the one returned from
+							  the plugins (E.g the UUID of a user returned from an external API),
+							  normally this ID can be combined with a Datasource so the datsource knows the
+							  ID of the resource that needs to get the data from.
 
 ## Import
 

@@ -37,6 +37,7 @@ provider goplugin {
 
 type expTestResourcePluginv1 struct {
 	ID           string
+	ResourceID   string
 	PluginID     string
 	ResourceData string
 }
@@ -107,6 +108,7 @@ resource "goplugin_plugin_v1" "test" {
 `,
 			expState: expTestResourcePluginv1{
 				ID:           `test_file//tmp/test.txt`,
+				ResourceID:   `/tmp/test.txt`,
 				PluginID:     `test_file`,
 				ResourceData: `{"content":"this is a test","path":"/tmp/test.txt"}`,
 			},
@@ -122,6 +124,7 @@ resource "goplugin_plugin_v1" "test" {
 			if test.expErr == nil {
 				checks = resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("goplugin_plugin_v1.test", "id", test.expState.ID),
+					resource.TestCheckResourceAttr("goplugin_plugin_v1.test", "resource_id", test.expState.ResourceID),
 					resource.TestCheckResourceAttr("goplugin_plugin_v1.test", "plugin_id", test.expState.PluginID),
 					resource.TestCheckResourceAttr("goplugin_plugin_v1.test", "resource_data", test.expState.ResourceData),
 					assertFileExistsWithContent(t, test.expFile, test.expFileContent),
@@ -183,6 +186,7 @@ resource "goplugin_plugin_v1" "test" {
 `,
 			expState: expTestResourcePluginv1{
 				ID:           `test_file//tmp/test.txt`,
+				ResourceID:   `/tmp/test.txt`,
 				PluginID:     `test_file`,
 				ResourceData: `{"content":"this is a test","path":"/tmp/test.txt"}`,
 			},
@@ -220,6 +224,7 @@ resource "goplugin_plugin_v1" "test" {
 						Config: configUpdate,
 						Check: resource.ComposeAggregateTestCheckFunc(
 							resource.TestCheckResourceAttr("goplugin_plugin_v1.test", "id", test.expState.ID),
+							resource.TestCheckResourceAttr("goplugin_plugin_v1.test", "resource_id", test.expState.ResourceID),
 							resource.TestCheckResourceAttr("goplugin_plugin_v1.test", "plugin_id", test.expState.PluginID),
 							resource.TestCheckResourceAttr("goplugin_plugin_v1.test", "resource_data", test.expState.ResourceData),
 							assertFileExistsWithContent(t, test.expFile, test.expFileContentUpdate),

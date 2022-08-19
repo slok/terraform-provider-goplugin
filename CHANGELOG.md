@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## Added
+
+- `resource_id` attribute (The one without the plugin ID).
+
 ## [v0.1.1] - 2022-08-18
 
 ## Fixed

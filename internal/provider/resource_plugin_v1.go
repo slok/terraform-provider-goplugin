@@ -34,19 +34,30 @@ Check [examples](https://github.com/slok/terraform-provider-goplugin/tree/main/e
 `,
 		Attributes: map[string]tfsdk.Attribute{
 			"id": {
-				Description:   `The resource ID, normally managed by terraform and the plugins logic.`,
+				Description:   "The ID of the terraform resource, also used on the import resource actions, it's composed by other 2 attributes in a specific format: `{plugin_id}/{resource_id}`.",
+				Type:          types.StringType,
+				PlanModifiers: tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
+				Computed:      true,
+			},
+			"resource_id": {
+				Description: `The ID of the resource itself (outside terraform), it's the one returned from
+							  the plugins (E.g the UUID of a user returned from an external API),
+							  normally this ID can be combined with a Datasource so the datsource knows the
+							  ID of the resource that needs to get the data from.`,
 				Type:          types.StringType,
 				PlanModifiers: tfsdk.AttributePlanModifiers{resource.UseStateForUnknown()},
 				Computed:      true,
 			},
 			"plugin_id": {
-				Description:   `The ID of the plugin to use, must be loaded and registered by the provider. To avoid inconsistencies, if changed the resource will be recreated.`,
+				Description: `The ID of the plugin to use, must be loaded and registered by the provider.
+							    To avoid inconsistencies, if changed the resource will be recreated.`,
 				Type:          types.StringType,
 				Required:      true,
 				PlanModifiers: tfsdk.AttributePlanModifiers{resource.RequiresReplace()},
 			},
 			"resource_data": {
-				Description:   `A JSON string object with the properties that will be passed to the plugin resource, the plugin is responsible of knowing how to load and use these properties.`,
+				Description: `A JSON string object with the properties that will be passed to the plugin
+								resource, the plugin is responsible of knowing how to load and use these properties.`,
 				Type:          types.StringType,
 				PlanModifiers: tfsdk.AttributePlanModifiers{attributeutils.SuppressEquivalentJSON},
 				Validators:    []tfsdk.AttributeValidator{attributeutils.NonEmptyString, attributeutils.MustJSONObject},
@@ -100,12 +111,13 @@ func (r resourcePluginV1) Create(ctx context.Context, req resource.CreateRequest
 		return
 	}
 
-	// Create correct ID.
+	// Generate terraform ID.
 	id := r.packID(tfResourcePlan.PluginID.Value, pluginResp.ID)
 
 	// Map result.
 	newTfPluginV1 := ResourcePluginV1{
 		ID:           types.String{Value: id},
+		ResourceID:   types.String{Value: pluginResp.ID},
 		PluginID:     tfResourcePlan.PluginID,
 		ResourceData: tfResourcePlan.ResourceData,
 	}
@@ -155,6 +167,7 @@ func (r resourcePluginV1) Read(ctx context.Context, req resource.ReadRequest, re
 	// Map result.
 	newTfPluginV1 := ResourcePluginV1{
 		ID:           tfResourceState.ID,
+		ResourceID:   types.String{Value: resourceID},
 		PluginID:     types.String{Value: pluginID},
 		ResourceData: types.String{Value: pluginResp.ResourceData},
 	}
@@ -215,7 +228,8 @@ func (r resourcePluginV1) Update(ctx context.Context, req resource.UpdateRequest
 
 	// Map result.
 	newTfPluginV1 := ResourcePluginV1{
-		ID:           tfResourceState.ID, // Once on state, never changes.
+		ID:           tfResourceState.ID,         // Once on state, never changes.
+		ResourceID:   tfResourceState.ResourceID, // Once on state, never changes.
 		PluginID:     tfResourcePlan.PluginID,
 		ResourceData: tfResourcePlan.ResourceData,
 	}
