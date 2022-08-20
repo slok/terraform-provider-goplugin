@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"os"
 	"strconv"
+	"time"
 
 	apiv1 "github.com/slok/terraform-provider-goplugin/pkg/api/v1"
 )
@@ -137,4 +138,70 @@ func (p plugin) chown(name string, fileMode int) error {
 	}
 
 	return nil
+}
+
+type DataSourceArguments struct {
+	Path string `json:"path"`
+}
+
+func (d DataSourceArguments) validate() error {
+	if d.Path == "" {
+		return fmt.Errorf("path is required")
+	}
+
+	return nil
+}
+
+type DataSourceResult struct {
+	SizeBytes int64     `json:"size_bytes"`
+	Mode      int       `json:"mode"`
+	ModTime   time.Time `json:"mod_time"`
+	IsDir     bool      `json:"is_dir"`
+	Content   string    `json:"content"`
+}
+
+func NewDataSourcePlugin(config string) (apiv1.DataSourcePlugin, error) {
+	return plugin{}, nil
+}
+
+func (p plugin) ReadDataSource(ctx context.Context, r apiv1.ReadDataSourceRequest) (*apiv1.ReadDataSourceResponse, error) {
+	args := DataSourceArguments{}
+	err := json.Unmarshal([]byte(r.Arguments), &args)
+	if err != nil {
+		return nil, fmt.Errorf("could not unmarshal JSON data: %w", err)
+	}
+
+	err = args.validate()
+	if err != nil {
+		return nil, fmt.Errorf("invalid arguments: %w", err)
+	}
+
+	content, err := os.ReadFile(args.Path)
+	if err != nil {
+		return nil, fmt.Errorf("could not read file: %w", err)
+	}
+
+	info, err := os.Stat(args.Path)
+	if err != nil {
+		return nil, fmt.Errorf("could not read file info: %w", err)
+	}
+
+	// Make sure we expose the file mode as an octal number.
+	modeS := strconv.FormatInt(int64(info.Mode()), 8)
+	mode, _ := strconv.ParseInt(modeS, 10, 64)
+
+	result, err := json.Marshal(DataSourceResult{
+		SizeBytes: info.Size(),
+		Mode:      int(mode),
+		ModTime:   info.ModTime(),
+		IsDir:     info.IsDir(),
+		Content:   string(content),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("could not marshal into JSON: %w", err)
+	}
+
+	return &apiv1.ReadDataSourceResponse{
+		Result: string(result),
+	}, nil
 }

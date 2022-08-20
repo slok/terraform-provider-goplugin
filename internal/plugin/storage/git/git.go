@@ -69,7 +69,7 @@ func NewSourceCodeRepository(config SourceCodeRepositoryConfig) (storage.SourceC
 		return nil, fmt.Errorf("could not walk git repository: %w", err)
 	}
 
-	return storage.DataSourceCodeRepository(files), nil
+	return storage.StaticSourceCodeRepository(files), nil
 }
 
 func match(path string, rs []*regexp.Regexp) bool {

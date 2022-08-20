@@ -20,8 +20,39 @@ import (
 //
 // Note: All plugin files must be at one dir depth level, this is by design on the provider.
 func NewTestResourcePlugin(ctx context.Context, pluginDir string, options string) (apiv1.ResourcePlugin, error) {
+	data, err := loadDirFiles(pluginDir)
+	if err != nil {
+		return nil, fmt.Errorf("could not read dir %q files: %w", pluginDir, err)
+	}
+
+	f := pluginv1.NewFactory()
+
+	return f.NewResourcePlugin(ctx, storage.StaticSourceCodeRepository(data), options)
+}
+
+// NewTestDataSourcePlugin is a helper util to load a plugin using the engine that
+// will use the terraform provider. In the sense of an acceptance/integration test.
+//
+// This has benefits over loading the plugin directly with Go, by using this method
+// you will be sure that what is executed is what the terraform provider will execute,
+// so, if you use a not supported feature or the engine has a bug, this will be
+// detected on the tests instead by running Terraform directly.
+//
+// Note: All plugin files must be at one dir depth level, this is by design on the provider.
+func NewTestDataSourcePlugin(ctx context.Context, pluginDir string, options string) (apiv1.DataSourcePlugin, error) {
+	data, err := loadDirFiles(pluginDir)
+	if err != nil {
+		return nil, fmt.Errorf("could not read dir %q files: %w", pluginDir, err)
+	}
+
+	f := pluginv1.NewFactory()
+
+	return f.NewDataSourcePlugin(ctx, storage.StaticSourceCodeRepository(data), options)
+}
+
+func loadDirFiles(dir string) ([]string, error) {
 	// Load plugin source from the file system.
-	files, err := os.ReadDir(pluginDir)
+	files, err := os.ReadDir(dir)
 	if err != nil {
 		return nil, fmt.Errorf("could not read directory files: %w", err)
 	}
@@ -35,7 +66,5 @@ func NewTestResourcePlugin(ctx context.Context, pluginDir string, options string
 		data = append(data, string(d))
 	}
 
-	// Create resource plugin.
-	f := pluginv1.NewFactory()
-	return f.NewResourcePlugin(ctx, storage.DataSourceCodeRepository(data), options)
+	return data, nil
 }

@@ -15,6 +15,14 @@ provider goplugin {
       configuration =  jsonencode({})
     }
   }
+  data_source_plugins_v1 = {
+    "os_file": {
+      source_code = {
+        data = [for f in fileset("./", "plugins/resource_os_file/*"): file(f)]
+      }
+      configuration =  jsonencode({})
+    }
+  }
 }
 
 locals {
@@ -38,4 +46,17 @@ resource "goplugin_plugin_v1" "os_file_test" {
     content = each.value
     mode = 644
   })
+}
+
+data "goplugin_plugin_v1" "os_file_test" {
+  for_each = goplugin_plugin_v1.os_file_test
+  
+  plugin_id = "os_file"
+  arguments = jsonencode({
+    path = each.value.resource_id
+  })
+}
+
+output "test" {
+   value = {for k, v in data.goplugin_plugin_v1.os_file_test: k => jsondecode(v.result)}
 }

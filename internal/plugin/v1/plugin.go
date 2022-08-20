@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
-	"io/fs"
 	"os"
 	"regexp"
 	"sort"
@@ -21,7 +20,8 @@ import (
 )
 
 type Factory struct {
-	pluginsCache sync.Map
+	resourcePluginsCache   sync.Map
+	dataSourcePluginsCache sync.Map
 }
 
 // NewFactory returns a new plugin V1 factory.
@@ -45,7 +45,7 @@ func (f *Factory) NewResourcePlugin(ctx context.Context, srcRepo storage.SourceC
 
 	// Get plugin from cache if we already have it.
 	index := f.pluginIndex(ctx, sanitizedPluginSource, pluginOptions)
-	p, ok := f.pluginsCache.Load(index)
+	p, ok := f.resourcePluginsCache.Load(index)
 	if ok {
 		// Should always be a resource plugin, we control the type internally,
 		// panicking its ok, shouldn't happen.
@@ -65,7 +65,46 @@ func (f *Factory) NewResourcePlugin(ctx context.Context, srcRepo storage.SourceC
 	}
 
 	// Store plugin in cache.
-	f.pluginsCache.Store(index, plugin)
+	f.resourcePluginsCache.Store(index, plugin)
+
+	return plugin, nil
+}
+
+func (f *Factory) NewDataSourcePlugin(ctx context.Context, srcRepo storage.SourceCodeRepository, pluginOptions string) (apiv1.DataSourcePlugin, error) {
+	pluginSource, err := srcRepo.GetSourceCode(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("could not get plugin source code: %w", err)
+	}
+
+	// Sanitize plugin source files like validating and ignoring files that should not be loaded.
+	sanitizedPluginSource, err := f.sanitizedPluginSource(ctx, pluginSource)
+	if err != nil {
+		return nil, fmt.Errorf("invalid plugin source: %w", err)
+	}
+
+	// Get plugin from cache if we already have it.
+	index := f.pluginIndex(ctx, sanitizedPluginSource, pluginOptions)
+	p, ok := f.dataSourcePluginsCache.Load(index)
+	if ok {
+		// Should always be a data source plugin, we control the type internally,
+		// panicking its ok, shouldn't happen.
+		plugin := p.(apiv1.DataSourcePlugin)
+		return plugin, nil
+	}
+
+	// Create Yaegi plugin.
+	pluginFactory, err := loadRawDataSourcePluginFactory(ctx, sanitizedPluginSource)
+	if err != nil {
+		return nil, fmt.Errorf("could not load plugin: %w", err)
+	}
+
+	plugin, err := pluginFactory(pluginOptions)
+	if err != nil {
+		return nil, fmt.Errorf("could not create plugin: %w", err)
+	}
+
+	// Store plugin in cache.
+	f.resourcePluginsCache.Store(index, plugin)
 
 	return plugin, nil
 }
@@ -105,31 +144,30 @@ func (f *Factory) pluginIndex(ctx context.Context, pluginSource []string, plugin
 	return fmt.Sprintf("%x", sha)
 }
 
+const (
+	pluginMemFSDir              = "plugin"
+	resourcePluginFactoryName   = "NewResourcePlugin"
+	dataSourcePluginFactoryName = "NewDataSourcePlugin"
+)
+
 func loadRawResourcePluginFactory(ctx context.Context, srcs []string) (apiv1.NewResourcePlugin, error) {
-	// Create our plugin memory FS with the plugin sources in a plugin dir.
-	mapFS := map[string]*fstest.MapFile{}
-	for i, src := range srcs {
-		fileName := fmt.Sprintf("plugin/%d.go", i)
-
-		mapFS[fileName] = &fstest.MapFile{Data: []byte(src)}
-	}
-
-	// Load the plugin in a new interpreter using the memory file system with our plugin dir.
-	// For each plugin we need to use an independent interpreter to avoid name collisions.
-	yaegiInterp, err := newYaegiInterpreter(fstest.MapFS(mapFS))
+	yaegiInterp, err := newPluginYaegiInterpreter(ctx, srcs, pluginMemFSDir)
 	if err != nil {
-		return nil, fmt.Errorf("could not create a new Yaegi interpreter: %w", err)
+		return nil, fmt.Errorf("could not create Yaegi interpreter: %w", err)
 	}
 
 	// Get plugin logic by
-	// - Importing the memfs local dir package
-	// - Getting the factory name convention (`NewResourcePlugin`).
+	// - Importing the memfs local dir package.
+	// - Getting the plugin factory name convention.
 	// - Type assert to our factory type convention.
-	_, err = yaegiInterp.EvalWithContext(ctx, `import plugin "./plugin"`)
+	pluginImportStatement := fmt.Sprintf(`import plugin "./%s"`, pluginMemFSDir)
+	_, err = yaegiInterp.EvalWithContext(ctx, pluginImportStatement)
 	if err != nil {
 		return nil, fmt.Errorf("could not import plugin package: %w", err)
 	}
-	pluginFuncTmp, err := yaegiInterp.EvalWithContext(ctx, "plugin.NewResourcePlugin")
+
+	srcPluginIdentifier := fmt.Sprintf("plugin.%s", resourcePluginFactoryName)
+	pluginFuncTmp, err := yaegiInterp.EvalWithContext(ctx, srcPluginIdentifier)
 	if err != nil {
 		return nil, fmt.Errorf("could not get plugin: %w", err)
 	}
@@ -142,9 +180,56 @@ func loadRawResourcePluginFactory(ctx context.Context, srcs []string) (apiv1.New
 	return pluginFunc, nil
 }
 
-func newYaegiInterpreter(fs fs.FS) (*interp.Interpreter, error) {
+func loadRawDataSourcePluginFactory(ctx context.Context, srcs []string) (apiv1.NewDataSourcePlugin, error) {
+	yaegiInterp, err := newPluginYaegiInterpreter(ctx, srcs, pluginMemFSDir)
+	if err != nil {
+		return nil, fmt.Errorf("could not create Yaegi interpreter: %w", err)
+	}
+
+	// Get plugin logic by
+	// - Importing the memfs local dir package.
+	// - Getting the plugin factory name convention.
+	// - Type assert to our factory type convention.
+	pluginImportStatement := fmt.Sprintf(`import plugin "./%s"`, pluginMemFSDir)
+	_, err = yaegiInterp.EvalWithContext(ctx, pluginImportStatement)
+	if err != nil {
+		return nil, fmt.Errorf("could not import plugin package: %w", err)
+	}
+
+	srcPluginIdentifier := fmt.Sprintf("plugin.%s", dataSourcePluginFactoryName)
+	pluginFuncTmp, err := yaegiInterp.EvalWithContext(ctx, srcPluginIdentifier)
+	if err != nil {
+		return nil, fmt.Errorf("could not get plugin: %w", err)
+	}
+
+	pluginFunc, ok := pluginFuncTmp.Interface().(apiv1.NewDataSourcePlugin)
+	if !ok {
+		return nil, fmt.Errorf("invalid plugin type")
+	}
+
+	return pluginFunc, nil
+}
+
+// newPluginReadyYaegiInterpreter will:
+// - Create a new Yaegi interpreter.
+// - Setup a memory based FS with the plugin source code loaded in the specified plugin dir.
+// - Add the required libraries available (standard library and our own library).
+func newPluginYaegiInterpreter(ctx context.Context, srcs []string, pluginDir string) (*interp.Interpreter, error) {
+	if pluginDir == "" {
+		return nil, fmt.Errorf("plugin directory to set the go plugin on the FS is required")
+	}
+
+	// Create our plugin memory FS with the plugin sources in a plugin dir.
+	mapFS := map[string]*fstest.MapFile{}
+	for i, src := range srcs {
+		fileName := fmt.Sprintf("%s/%d.go", pluginDir, i)
+
+		mapFS[fileName] = &fstest.MapFile{Data: []byte(src)}
+	}
+
+	// Create interpreter
 	i := interp.New(interp.Options{
-		SourcecodeFilesystem: fs,
+		SourcecodeFilesystem: fstest.MapFS(mapFS),
 		Env:                  os.Environ(),
 	})
 

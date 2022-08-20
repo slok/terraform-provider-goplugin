@@ -30,3 +30,11 @@ func (p plugin) DeleteResource(ctx context.Context, r apiv1.DeleteResourceReques
 func (p plugin) UpdateResource(ctx context.Context, r apiv1.UpdateResourceRequest) (*apiv1.UpdateResourceResponse, error) {
 	return nil, fmt.Errorf(p.errorMessage)
 }
+
+func NewDataSourcePlugin(opts string) (apiv1.DataSourcePlugin, error) {
+	return plugin{errorMessage: "something"}, nil
+}
+
+func (p plugin) ReadDataSource(ctx context.Context, r apiv1.ReadDataSourceRequest) (*apiv1.ReadDataSourceResponse, error) {
+	return nil, fmt.Errorf(p.errorMessage)
+}

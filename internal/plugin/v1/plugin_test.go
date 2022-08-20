@@ -13,6 +13,17 @@ import (
 	apiv1 "github.com/slok/terraform-provider-goplugin/pkg/api/v1"
 )
 
+var (
+	pluginSrcsNoop  = []string{"./testdata/plugin_noop/plugin.go"}
+	pluginSrcsError = []string{"./testdata/plugin_error/plugin.go"}
+	pluginSrcsOk    = []string{
+		"./testdata/plugin_ok/plugin.go",
+		"./testdata/plugin_ok/resource.go",
+		"./testdata/plugin_ok/data_source.go",
+		"./testdata/plugin_ok/plz_ignore_test.go",
+	}
+)
+
 func TestResourcePluginCreate(t *testing.T) {
 	tests := map[string]struct {
 		pluginPaths []string
@@ -21,24 +32,17 @@ func TestResourcePluginCreate(t *testing.T) {
 		expErr      bool
 	}{
 		"Noop plugin should end correctly being a NOOP.": {
-			pluginPaths: []string{
-				"./testdata/plugin_noop/plugin.go",
-			},
+			pluginPaths: pluginSrcsNoop,
 			expResponse: &apiv1.CreateResourceResponse{},
 		},
 
 		"Error plugin should fail the execution.": {
-			pluginPaths: []string{
-				"./testdata/plugin_error/plugin.go",
-			},
-			expErr: true,
+			pluginPaths: pluginSrcsError,
+			expErr:      true,
 		},
 
 		"A correct plugin should return the correct result.": {
-			pluginPaths: []string{
-				"./testdata/plugin_ok/plugin.go",
-				"./testdata/plugin_ok/resource.go",
-			},
+			pluginPaths: pluginSrcsOk,
 			request: apiv1.CreateResourceRequest{
 				ResourceData: "this is a test",
 			},
@@ -62,9 +66,9 @@ func TestResourcePluginCreate(t *testing.T) {
 
 			// Create the plugin twice to check the plugin cache.
 			f := pluginv1.NewFactory()
-			_, err := f.NewResourcePlugin(context.TODO(), storage.DataSourceCodeRepository(pluginSource), "")
+			_, err := f.NewResourcePlugin(context.TODO(), storage.StaticSourceCodeRepository(pluginSource), "")
 			require.NoError(err)
-			p, err := f.NewResourcePlugin(context.TODO(), storage.DataSourceCodeRepository(pluginSource), "")
+			p, err := f.NewResourcePlugin(context.TODO(), storage.StaticSourceCodeRepository(pluginSource), "")
 			require.NoError(err)
 
 			resp, err := p.CreateResource(context.TODO(), test.request)
@@ -86,24 +90,17 @@ func TestResourcePluginRead(t *testing.T) {
 		expErr      bool
 	}{
 		"Noop plugin should end correctly being a NOOP.": {
-			pluginPaths: []string{
-				"./testdata/plugin_noop/plugin.go",
-			},
+			pluginPaths: pluginSrcsNoop,
 			expResponse: &apiv1.ReadResourceResponse{},
 		},
 
 		"Error plugin should fail the execution.": {
-			pluginPaths: []string{
-				"./testdata/plugin_error/plugin.go",
-			},
-			expErr: true,
+			pluginPaths: pluginSrcsError,
+			expErr:      true,
 		},
 
 		"A correct plugin should return the correct result.": {
-			pluginPaths: []string{
-				"./testdata/plugin_ok/plugin.go",
-				"./testdata/plugin_ok/resource.go",
-			},
+			pluginPaths: pluginSrcsOk,
 			request: apiv1.ReadResourceRequest{
 				ID: "this is a test",
 			},
@@ -127,9 +124,9 @@ func TestResourcePluginRead(t *testing.T) {
 
 			// Create the plugin twice to check the plugin cache.
 			f := pluginv1.NewFactory()
-			_, err := f.NewResourcePlugin(context.TODO(), storage.DataSourceCodeRepository(pluginSource), "")
+			_, err := f.NewResourcePlugin(context.TODO(), storage.StaticSourceCodeRepository(pluginSource), "")
 			require.NoError(err)
-			p, err := f.NewResourcePlugin(context.TODO(), storage.DataSourceCodeRepository(pluginSource), "")
+			p, err := f.NewResourcePlugin(context.TODO(), storage.StaticSourceCodeRepository(pluginSource), "")
 			require.NoError(err)
 
 			resp, err := p.ReadResource(context.TODO(), test.request)
@@ -151,24 +148,17 @@ func TestResourcePluginUpdate(t *testing.T) {
 		expErr      bool
 	}{
 		"Noop plugin should end correctly being a NOOP.": {
-			pluginPaths: []string{
-				"./testdata/plugin_noop/plugin.go",
-			},
+			pluginPaths: pluginSrcsNoop,
 			expResponse: &apiv1.UpdateResourceResponse{},
 		},
 
 		"Error plugin should fail the execution.": {
-			pluginPaths: []string{
-				"./testdata/plugin_error/plugin.go",
-			},
-			expErr: true,
+			pluginPaths: pluginSrcsError,
+			expErr:      true,
 		},
 
 		"A correct plugin should return the correct result.": {
-			pluginPaths: []string{
-				"./testdata/plugin_ok/plugin.go",
-				"./testdata/plugin_ok/resource.go",
-			},
+			pluginPaths: pluginSrcsOk,
 			request: apiv1.UpdateResourceRequest{
 				ID:                "test1",
 				ResourceData:      "This is",
@@ -192,9 +182,9 @@ func TestResourcePluginUpdate(t *testing.T) {
 
 			// Create the plugin twice to check the plugin cache.
 			f := pluginv1.NewFactory()
-			_, err := f.NewResourcePlugin(context.TODO(), storage.DataSourceCodeRepository(pluginSource), "")
+			_, err := f.NewResourcePlugin(context.TODO(), storage.StaticSourceCodeRepository(pluginSource), "")
 			require.NoError(err)
-			p, err := f.NewResourcePlugin(context.TODO(), storage.DataSourceCodeRepository(pluginSource), "")
+			p, err := f.NewResourcePlugin(context.TODO(), storage.StaticSourceCodeRepository(pluginSource), "")
 			require.NoError(err)
 
 			resp, err := p.UpdateResource(context.TODO(), test.request)
@@ -216,24 +206,17 @@ func TestResourcePluginDelete(t *testing.T) {
 		expErr      bool
 	}{
 		"Noop plugin should end correctly being a NOOP.": {
-			pluginPaths: []string{
-				"./testdata/plugin_noop/plugin.go",
-			},
+			pluginPaths: pluginSrcsNoop,
 			expResponse: &apiv1.DeleteResourceResponse{},
 		},
 
 		"Error plugin should fail the execution.": {
-			pluginPaths: []string{
-				"./testdata/plugin_error/plugin.go",
-			},
-			expErr: true,
+			pluginPaths: pluginSrcsError,
+			expErr:      true,
 		},
 
 		"A correct plugin should return the correct result.": {
-			pluginPaths: []string{
-				"./testdata/plugin_ok/plugin.go",
-				"./testdata/plugin_ok/resource.go",
-			},
+			pluginPaths: pluginSrcsOk,
 			request: apiv1.DeleteResourceRequest{
 				ID: "test1",
 			},
@@ -255,12 +238,70 @@ func TestResourcePluginDelete(t *testing.T) {
 
 			// Create the plugin twice to check the plugin cache.
 			f := pluginv1.NewFactory()
-			_, err := f.NewResourcePlugin(context.TODO(), storage.DataSourceCodeRepository(pluginSource), "")
+			_, err := f.NewResourcePlugin(context.TODO(), storage.StaticSourceCodeRepository(pluginSource), "")
 			require.NoError(err)
-			p, err := f.NewResourcePlugin(context.TODO(), storage.DataSourceCodeRepository(pluginSource), "")
+			p, err := f.NewResourcePlugin(context.TODO(), storage.StaticSourceCodeRepository(pluginSource), "")
 			require.NoError(err)
 
 			resp, err := p.DeleteResource(context.TODO(), test.request)
+
+			if test.expErr {
+				assert.Error(err)
+			} else if assert.NoError(err) {
+				assert.Equal(test.expResponse, resp)
+			}
+		})
+	}
+}
+
+func TestDataSourcePluginRead(t *testing.T) {
+	tests := map[string]struct {
+		pluginPaths []string
+		request     apiv1.ReadDataSourceRequest
+		expResponse *apiv1.ReadDataSourceResponse
+		expErr      bool
+	}{
+		"Noop plugin should end correctly being a NOOP.": {
+			pluginPaths: pluginSrcsNoop,
+			expResponse: &apiv1.ReadDataSourceResponse{},
+		},
+
+		"Error plugin should fail the execution.": {
+			pluginPaths: pluginSrcsError,
+			expErr:      true,
+		},
+
+		"A correct plugin should return the correct result.": {
+			pluginPaths: pluginSrcsOk,
+			request: apiv1.ReadDataSourceRequest{
+				Arguments: "this is a test",
+			},
+			expResponse: &apiv1.ReadDataSourceResponse{
+				Result: "this is a testfrom_data_source",
+			},
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(*testing.T) {
+			assert := assert.New(t)
+			require := require.New(t)
+
+			pluginSource := []string{}
+			for _, p := range test.pluginPaths {
+				d, err := os.ReadFile(p)
+				require.NoError(err)
+				pluginSource = append(pluginSource, string(d))
+			}
+
+			// Create the plugin twice to check the plugin cache.
+			f := pluginv1.NewFactory()
+			_, err := f.NewDataSourcePlugin(context.TODO(), storage.StaticSourceCodeRepository(pluginSource), "")
+			require.NoError(err)
+			p, err := f.NewDataSourcePlugin(context.TODO(), storage.StaticSourceCodeRepository(pluginSource), "")
+			require.NoError(err)
+
+			resp, err := p.ReadDataSource(context.TODO(), test.request)
 
 			if test.expErr {
 				assert.Error(err)
