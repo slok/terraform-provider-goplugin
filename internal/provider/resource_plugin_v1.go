@@ -93,7 +93,7 @@ func (r resourcePluginV1) Create(ctx context.Context, req resource.CreateRequest
 	}
 
 	// Get plugin.
-	plugin, ok := r.p.loadedPluginsV1[tfResourcePlan.PluginID.Value]
+	plugin, ok := r.p.resourcePluginsV1[tfResourcePlan.PluginID.Value]
 	if !ok {
 		resp.Diagnostics.AddError("Plugin missing", fmt.Sprintf("%q plugin is not loaded", tfResourcePlan.PluginID.Value))
 		return
@@ -151,7 +151,7 @@ func (r resourcePluginV1) Read(ctx context.Context, req resource.ReadRequest, re
 	}
 
 	// Get plugin.
-	plugin, ok := r.p.loadedPluginsV1[pluginID]
+	plugin, ok := r.p.resourcePluginsV1[pluginID]
 	if !ok {
 		resp.Diagnostics.AddError("Plugin missing", fmt.Sprintf("%q plugin is not loaded", pluginID))
 		return
@@ -209,7 +209,7 @@ func (r resourcePluginV1) Update(ctx context.Context, req resource.UpdateRequest
 	}
 
 	// Get plugin.
-	plugin, ok := r.p.loadedPluginsV1[pluginID]
+	plugin, ok := r.p.resourcePluginsV1[pluginID]
 	if !ok {
 		resp.Diagnostics.AddError("Plugin missing", fmt.Sprintf("%q plugin is not loaded", pluginID))
 		return
@@ -263,7 +263,7 @@ func (r resourcePluginV1) Delete(ctx context.Context, req resource.DeleteRequest
 	}
 
 	// Get plugin.
-	plugin, ok := r.p.loadedPluginsV1[pluginID]
+	plugin, ok := r.p.resourcePluginsV1[pluginID]
 	if !ok {
 		resp.Diagnostics.AddError("Plugin missing", fmt.Sprintf("%q plugin is not loaded", pluginID))
 		return

@@ -5,6 +5,9 @@
 ## Added
 
 - `resource_id` attribute (The one without the plugin ID).
+- `plugin_v1` data source.
+- V1 data source plugin engine.
+- Data source plugin v1 lib including testing utils.
 
 ## [v0.1.1] - 2022-08-18
 

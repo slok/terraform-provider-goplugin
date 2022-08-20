@@ -13,8 +13,13 @@ func init() {
 		// type definitions
 		"CreateResourceRequest":  reflect.ValueOf((*v1.CreateResourceRequest)(nil)),
 		"CreateResourceResponse": reflect.ValueOf((*v1.CreateResourceResponse)(nil)),
+		"DataSourcePlugin":       reflect.ValueOf((*v1.DataSourcePlugin)(nil)),
 		"DeleteResourceRequest":  reflect.ValueOf((*v1.DeleteResourceRequest)(nil)),
 		"DeleteResourceResponse": reflect.ValueOf((*v1.DeleteResourceResponse)(nil)),
+		"NewDataSourcePlugin":    reflect.ValueOf((*v1.NewDataSourcePlugin)(nil)),
+		"NewResourcePlugin":      reflect.ValueOf((*v1.NewResourcePlugin)(nil)),
+		"ReadDataSourceRequest":  reflect.ValueOf((*v1.ReadDataSourceRequest)(nil)),
+		"ReadDataSourceResponse": reflect.ValueOf((*v1.ReadDataSourceResponse)(nil)),
 		"ReadResourceRequest":    reflect.ValueOf((*v1.ReadResourceRequest)(nil)),
 		"ReadResourceResponse":   reflect.ValueOf((*v1.ReadResourceResponse)(nil)),
 		"ResourcePlugin":         reflect.ValueOf((*v1.ResourcePlugin)(nil)),
@@ -22,8 +27,19 @@ func init() {
 		"UpdateResourceResponse": reflect.ValueOf((*v1.UpdateResourceResponse)(nil)),
 
 		// interface wrapper definitions
-		"_ResourcePlugin": reflect.ValueOf((*_github_com_slok_terraform_provider_goplugin_pkg_api_v1_ResourcePlugin)(nil)),
+		"_DataSourcePlugin": reflect.ValueOf((*_github_com_slok_terraform_provider_goplugin_pkg_api_v1_DataSourcePlugin)(nil)),
+		"_ResourcePlugin":   reflect.ValueOf((*_github_com_slok_terraform_provider_goplugin_pkg_api_v1_ResourcePlugin)(nil)),
 	}
+}
+
+// _github_com_slok_terraform_provider_goplugin_pkg_api_v1_DataSourcePlugin is an interface wrapper for DataSourcePlugin type
+type _github_com_slok_terraform_provider_goplugin_pkg_api_v1_DataSourcePlugin struct {
+	IValue          interface{}
+	WReadDataSource func(ctx context.Context, r v1.ReadDataSourceRequest) (*v1.ReadDataSourceResponse, error)
+}
+
+func (W _github_com_slok_terraform_provider_goplugin_pkg_api_v1_DataSourcePlugin) ReadDataSource(ctx context.Context, r v1.ReadDataSourceRequest) (*v1.ReadDataSourceResponse, error) {
+	return W.WReadDataSource(ctx, r)
 }
 
 // _github_com_slok_terraform_provider_goplugin_pkg_api_v1_ResourcePlugin is an interface wrapper for ResourcePlugin type

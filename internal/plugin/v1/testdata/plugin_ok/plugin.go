@@ -8,4 +8,8 @@ func NewResourcePlugin(configuration string) (apiv1.ResourcePlugin, error) {
 	return plugin{}, nil
 }
 
+func NewDataSourcePlugin(configuration string) (apiv1.DataSourcePlugin, error) {
+	return plugin{}, nil
+}
+
 type plugin struct{}
