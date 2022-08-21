@@ -155,12 +155,12 @@ func (p *tfProvider) Configure(ctx context.Context, req provider.ConfigureReques
 		return
 	}
 
-	v1factory := pluginv1.NewFactory()
+	pluginV1Engine := pluginv1.NewEngine()
 
 	// Load resource plugins.
 	resourcePlugins := map[string]apiv1.ResourcePlugin{}
 	for pluginID, pluginConfig := range config.ResourcePluginsV1 {
-		plugin, err := p.loadAPIV1ResourcePlugin(ctx, v1factory, pluginConfig)
+		plugin, err := p.loadAPIV1ResourcePlugin(ctx, pluginV1Engine, pluginConfig)
 		if err != nil {
 			resp.Diagnostics.AddError("Error while loading resource plugin", fmt.Sprintf("Could not load plugin resource %q due to an error: %s", pluginID, err.Error()))
 			return
@@ -171,7 +171,7 @@ func (p *tfProvider) Configure(ctx context.Context, req provider.ConfigureReques
 	// Load data source plugins.
 	dataSourcePlugins := map[string]apiv1.DataSourcePlugin{}
 	for pluginID, pluginConfig := range config.DataSourcePluginsV1 {
-		plugin, err := p.loadAPIV1DataSourcePlugin(ctx, v1factory, pluginConfig)
+		plugin, err := p.loadAPIV1DataSourcePlugin(ctx, pluginV1Engine, pluginConfig)
 		if err != nil {
 			resp.Diagnostics.AddError("Error while loading data source plugin", fmt.Sprintf("Could not load data source plugin %q due to an error: %s", pluginID, err.Error()))
 			return
@@ -196,7 +196,7 @@ func (p *tfProvider) GetDataSources(_ context.Context) (map[string]provider.Data
 	}, nil
 }
 
-func (p *tfProvider) loadAPIV1ResourcePlugin(ctx context.Context, pluginFactory *pluginv1.Factory, pluginConfig providerDataPluginV1) (apiv1.ResourcePlugin, error) {
+func (p *tfProvider) loadAPIV1ResourcePlugin(ctx context.Context, pluginFactory *pluginv1.Engine, pluginConfig providerDataPluginV1) (apiv1.ResourcePlugin, error) {
 	repo, err := p.loadAPIV1PluginSourceCode(ctx, pluginConfig.SourceCode)
 	if err != nil {
 		return nil, fmt.Errorf("error loading plugin source code: %w", err)
@@ -220,7 +220,7 @@ func (p *tfProvider) loadAPIV1ResourcePlugin(ctx context.Context, pluginFactory 
 	return plugin, nil
 }
 
-func (p *tfProvider) loadAPIV1DataSourcePlugin(ctx context.Context, pluginFactory *pluginv1.Factory, pluginConfig providerDataPluginV1) (apiv1.DataSourcePlugin, error) {
+func (p *tfProvider) loadAPIV1DataSourcePlugin(ctx context.Context, pluginFactory *pluginv1.Engine, pluginConfig providerDataPluginV1) (apiv1.DataSourcePlugin, error) {
 	repo, err := p.loadAPIV1PluginSourceCode(ctx, pluginConfig.SourceCode)
 	if err != nil {
 		return nil, fmt.Errorf("error loading plugin source code: %w", err)
