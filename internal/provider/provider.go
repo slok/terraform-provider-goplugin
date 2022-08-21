@@ -178,7 +178,11 @@ func (p *tfProvider) loadAPIV1ResourcePlugin(ctx context.Context, pluginFactory 
 		return nil, fmt.Errorf("error loading plugin source code: %w", err)
 	}
 
-	plugin, err := pluginFactory.NewResourcePlugin(ctx, repo, pluginConfig.Configuration.Value)
+	plugin, err := pluginFactory.NewResourcePlugin(ctx, pluginv1.PluginConfig{
+		SourceCodeRepository: repo,
+		PluginFactoryName:    "NewResourcePlugin", // TODO(slok): Make it configurable by the user.
+		PluginOptions:        pluginConfig.Configuration.Value,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("error loading plugin: %w", err)
 	}
@@ -192,7 +196,11 @@ func (p *tfProvider) loadAPIV1DataSourcePlugin(ctx context.Context, pluginFactor
 		return nil, fmt.Errorf("error loading plugin source code: %w", err)
 	}
 
-	plugin, err := pluginFactory.NewDataSourcePlugin(ctx, repo, pluginConfig.Configuration.Value)
+	plugin, err := pluginFactory.NewDataSourcePlugin(ctx, pluginv1.PluginConfig{
+		SourceCodeRepository: repo,
+		PluginFactoryName:    "NewDataSourcePlugin", // TODO(slok): Make it configurable by the user.
+		PluginOptions:        pluginConfig.Configuration.Value,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("error loading plugin from source code: %w", err)
 	}

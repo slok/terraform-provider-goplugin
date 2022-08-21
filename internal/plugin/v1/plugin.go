@@ -29,10 +29,39 @@ func NewFactory() *Factory {
 	return &Factory{}
 }
 
+// PluginConfig is the configuration that the engine needs to instantiate a new plugin.
+type PluginConfig struct {
+	// SourceCodeRepository is the repository where the plugin engine will get the source code for the plugin.
+	SourceCodeRepository storage.SourceCodeRepository
+	// PluginOptions are the options that will be passed to the plugin factory to create a new plugin.
+	PluginOptions string
+	// PluginFactoryName is the name that the plugin  engine will search for in the plugin factory inside
+	// the plugin source code. It must meet the plugin factory signature.
+	// E.g: NewResourcePlugin, NewDataSourcePlugin...
+	PluginFactoryName string
+}
+
+func (p *PluginConfig) defaults() error {
+	if p.SourceCodeRepository == nil {
+		return fmt.Errorf("source code repository is required")
+	}
+
+	if p.PluginFactoryName == "" {
+		return fmt.Errorf("The name of the plugin factory is required")
+	}
+
+	return nil
+}
+
 // NewResourcePlugin returns a new plugin based on the plugin source code and the plugin options that will be passed on plugin creation.
 // the resulting plugin will be able to be used.
-func (f *Factory) NewResourcePlugin(ctx context.Context, srcRepo storage.SourceCodeRepository, pluginOptions string) (apiv1.ResourcePlugin, error) {
-	pluginSource, err := srcRepo.GetSourceCode(ctx)
+func (f *Factory) NewResourcePlugin(ctx context.Context, config PluginConfig) (apiv1.ResourcePlugin, error) {
+	err := config.defaults()
+	if err != nil {
+		return nil, fmt.Errorf("invalid plugin configuration: %w", err)
+	}
+
+	pluginSource, err := config.SourceCodeRepository.GetSourceCode(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("could not get plugin source code: %w", err)
 	}
@@ -44,7 +73,7 @@ func (f *Factory) NewResourcePlugin(ctx context.Context, srcRepo storage.SourceC
 	}
 
 	// Get plugin from cache if we already have it.
-	index := f.pluginIndex(ctx, sanitizedPluginSource, pluginOptions)
+	index := f.pluginIndex(ctx, sanitizedPluginSource, config.PluginOptions)
 	p, ok := f.resourcePluginsCache.Load(index)
 	if ok {
 		// Should always be a resource plugin, we control the type internally,
@@ -54,12 +83,12 @@ func (f *Factory) NewResourcePlugin(ctx context.Context, srcRepo storage.SourceC
 	}
 
 	// Create Yaegi plugin.
-	pluginFactory, err := loadRawResourcePluginFactory(ctx, sanitizedPluginSource)
+	pluginFactory, err := loadRawResourcePluginFactory(ctx, config.PluginFactoryName, sanitizedPluginSource)
 	if err != nil {
 		return nil, fmt.Errorf("could not load plugin: %w", err)
 	}
 
-	plugin, err := pluginFactory(pluginOptions)
+	plugin, err := pluginFactory(config.PluginOptions)
 	if err != nil {
 		return nil, fmt.Errorf("could not create plugin: %w", err)
 	}
@@ -70,8 +99,13 @@ func (f *Factory) NewResourcePlugin(ctx context.Context, srcRepo storage.SourceC
 	return plugin, nil
 }
 
-func (f *Factory) NewDataSourcePlugin(ctx context.Context, srcRepo storage.SourceCodeRepository, pluginOptions string) (apiv1.DataSourcePlugin, error) {
-	pluginSource, err := srcRepo.GetSourceCode(ctx)
+func (f *Factory) NewDataSourcePlugin(ctx context.Context, config PluginConfig) (apiv1.DataSourcePlugin, error) {
+	err := config.defaults()
+	if err != nil {
+		return nil, fmt.Errorf("invalid plugin configuration: %w", err)
+	}
+
+	pluginSource, err := config.SourceCodeRepository.GetSourceCode(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("could not get plugin source code: %w", err)
 	}
@@ -83,7 +117,7 @@ func (f *Factory) NewDataSourcePlugin(ctx context.Context, srcRepo storage.Sourc
 	}
 
 	// Get plugin from cache if we already have it.
-	index := f.pluginIndex(ctx, sanitizedPluginSource, pluginOptions)
+	index := f.pluginIndex(ctx, sanitizedPluginSource, config.PluginOptions)
 	p, ok := f.dataSourcePluginsCache.Load(index)
 	if ok {
 		// Should always be a data source plugin, we control the type internally,
@@ -93,12 +127,12 @@ func (f *Factory) NewDataSourcePlugin(ctx context.Context, srcRepo storage.Sourc
 	}
 
 	// Create Yaegi plugin.
-	pluginFactory, err := loadRawDataSourcePluginFactory(ctx, sanitizedPluginSource)
+	pluginFactory, err := loadRawDataSourcePluginFactory(ctx, config.PluginFactoryName, sanitizedPluginSource)
 	if err != nil {
 		return nil, fmt.Errorf("could not load plugin: %w", err)
 	}
 
-	plugin, err := pluginFactory(pluginOptions)
+	plugin, err := pluginFactory(config.PluginOptions)
 	if err != nil {
 		return nil, fmt.Errorf("could not create plugin: %w", err)
 	}
@@ -144,13 +178,9 @@ func (f *Factory) pluginIndex(ctx context.Context, pluginSource []string, plugin
 	return fmt.Sprintf("%x", sha)
 }
 
-const (
-	pluginMemFSDir              = "plugin"
-	resourcePluginFactoryName   = "NewResourcePlugin"
-	dataSourcePluginFactoryName = "NewDataSourcePlugin"
-)
+const pluginMemFSDir = "plugin"
 
-func loadRawResourcePluginFactory(ctx context.Context, srcs []string) (apiv1.NewResourcePlugin, error) {
+func loadRawResourcePluginFactory(ctx context.Context, pluginFactoryName string, srcs []string) (apiv1.NewResourcePlugin, error) {
 	yaegiInterp, err := newPluginYaegiInterpreter(ctx, srcs, pluginMemFSDir)
 	if err != nil {
 		return nil, fmt.Errorf("could not create Yaegi interpreter: %w", err)
@@ -166,7 +196,7 @@ func loadRawResourcePluginFactory(ctx context.Context, srcs []string) (apiv1.New
 		return nil, fmt.Errorf("could not import plugin package: %w", err)
 	}
 
-	srcPluginIdentifier := fmt.Sprintf("plugin.%s", resourcePluginFactoryName)
+	srcPluginIdentifier := fmt.Sprintf("plugin.%s", pluginFactoryName)
 	pluginFuncTmp, err := yaegiInterp.EvalWithContext(ctx, srcPluginIdentifier)
 	if err != nil {
 		return nil, fmt.Errorf("could not get plugin: %w", err)
@@ -180,7 +210,7 @@ func loadRawResourcePluginFactory(ctx context.Context, srcs []string) (apiv1.New
 	return pluginFunc, nil
 }
 
-func loadRawDataSourcePluginFactory(ctx context.Context, srcs []string) (apiv1.NewDataSourcePlugin, error) {
+func loadRawDataSourcePluginFactory(ctx context.Context, pluginFactoryName string, srcs []string) (apiv1.NewDataSourcePlugin, error) {
 	yaegiInterp, err := newPluginYaegiInterpreter(ctx, srcs, pluginMemFSDir)
 	if err != nil {
 		return nil, fmt.Errorf("could not create Yaegi interpreter: %w", err)
@@ -196,7 +226,7 @@ func loadRawDataSourcePluginFactory(ctx context.Context, srcs []string) (apiv1.N
 		return nil, fmt.Errorf("could not import plugin package: %w", err)
 	}
 
-	srcPluginIdentifier := fmt.Sprintf("plugin.%s", dataSourcePluginFactoryName)
+	srcPluginIdentifier := fmt.Sprintf("plugin.%s", pluginFactoryName)
 	pluginFuncTmp, err := yaegiInterp.EvalWithContext(ctx, srcPluginIdentifier)
 	if err != nil {
 		return nil, fmt.Errorf("could not get plugin: %w", err)

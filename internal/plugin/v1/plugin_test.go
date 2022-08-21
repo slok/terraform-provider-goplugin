@@ -65,10 +65,15 @@ func TestResourcePluginCreate(t *testing.T) {
 			}
 
 			// Create the plugin twice to check the plugin cache.
+			config := pluginv1.PluginConfig{
+				SourceCodeRepository: storage.StaticSourceCodeRepository(pluginSource),
+				PluginOptions:        "",
+				PluginFactoryName:    "NewResourcePlugin",
+			}
 			f := pluginv1.NewFactory()
-			_, err := f.NewResourcePlugin(context.TODO(), storage.StaticSourceCodeRepository(pluginSource), "")
+			_, err := f.NewResourcePlugin(context.TODO(), config)
 			require.NoError(err)
-			p, err := f.NewResourcePlugin(context.TODO(), storage.StaticSourceCodeRepository(pluginSource), "")
+			p, err := f.NewResourcePlugin(context.TODO(), config)
 			require.NoError(err)
 
 			resp, err := p.CreateResource(context.TODO(), test.request)
@@ -123,10 +128,15 @@ func TestResourcePluginRead(t *testing.T) {
 			}
 
 			// Create the plugin twice to check the plugin cache.
+			config := pluginv1.PluginConfig{
+				SourceCodeRepository: storage.StaticSourceCodeRepository(pluginSource),
+				PluginOptions:        "",
+				PluginFactoryName:    "NewResourcePlugin",
+			}
 			f := pluginv1.NewFactory()
-			_, err := f.NewResourcePlugin(context.TODO(), storage.StaticSourceCodeRepository(pluginSource), "")
+			_, err := f.NewResourcePlugin(context.TODO(), config)
 			require.NoError(err)
-			p, err := f.NewResourcePlugin(context.TODO(), storage.StaticSourceCodeRepository(pluginSource), "")
+			p, err := f.NewResourcePlugin(context.TODO(), config)
 			require.NoError(err)
 
 			resp, err := p.ReadResource(context.TODO(), test.request)
@@ -181,10 +191,15 @@ func TestResourcePluginUpdate(t *testing.T) {
 			}
 
 			// Create the plugin twice to check the plugin cache.
+			config := pluginv1.PluginConfig{
+				SourceCodeRepository: storage.StaticSourceCodeRepository(pluginSource),
+				PluginOptions:        "",
+				PluginFactoryName:    "NewResourcePlugin",
+			}
 			f := pluginv1.NewFactory()
-			_, err := f.NewResourcePlugin(context.TODO(), storage.StaticSourceCodeRepository(pluginSource), "")
+			_, err := f.NewResourcePlugin(context.TODO(), config)
 			require.NoError(err)
-			p, err := f.NewResourcePlugin(context.TODO(), storage.StaticSourceCodeRepository(pluginSource), "")
+			p, err := f.NewResourcePlugin(context.TODO(), config)
 			require.NoError(err)
 
 			resp, err := p.UpdateResource(context.TODO(), test.request)
@@ -237,10 +252,15 @@ func TestResourcePluginDelete(t *testing.T) {
 			}
 
 			// Create the plugin twice to check the plugin cache.
+			config := pluginv1.PluginConfig{
+				SourceCodeRepository: storage.StaticSourceCodeRepository(pluginSource),
+				PluginOptions:        "",
+				PluginFactoryName:    "NewResourcePlugin",
+			}
 			f := pluginv1.NewFactory()
-			_, err := f.NewResourcePlugin(context.TODO(), storage.StaticSourceCodeRepository(pluginSource), "")
+			_, err := f.NewResourcePlugin(context.TODO(), config)
 			require.NoError(err)
-			p, err := f.NewResourcePlugin(context.TODO(), storage.StaticSourceCodeRepository(pluginSource), "")
+			p, err := f.NewResourcePlugin(context.TODO(), config)
 			require.NoError(err)
 
 			resp, err := p.DeleteResource(context.TODO(), test.request)
@@ -295,10 +315,15 @@ func TestDataSourcePluginRead(t *testing.T) {
 			}
 
 			// Create the plugin twice to check the plugin cache.
+			config := pluginv1.PluginConfig{
+				SourceCodeRepository: storage.StaticSourceCodeRepository(pluginSource),
+				PluginOptions:        "",
+				PluginFactoryName:    "NewDataSourcePlugin",
+			}
 			f := pluginv1.NewFactory()
-			_, err := f.NewDataSourcePlugin(context.TODO(), storage.StaticSourceCodeRepository(pluginSource), "")
+			_, err := f.NewDataSourcePlugin(context.TODO(), config)
 			require.NoError(err)
-			p, err := f.NewDataSourcePlugin(context.TODO(), storage.StaticSourceCodeRepository(pluginSource), "")
+			p, err := f.NewDataSourcePlugin(context.TODO(), config)
 			require.NoError(err)
 
 			resp, err := p.ReadDataSource(context.TODO(), test.request)
