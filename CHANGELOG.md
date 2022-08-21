@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [v0.2.0] - 2022-08-21
+
 ## Added
 
 - `resource_id` attribute (The one without the plugin ID).
@@ -31,6 +33,7 @@
 - Documentation.
 
 
-[unreleased]: https://github.com/slok/terraform-provider-goplugin/compare/v0.1.1...HEAD
+[unreleased]: https://github.com/slok/terraform-provider-goplugin/compare/v0.2.0...HEAD
+[v0.2.0]: https://github.com/slok/terraform-provider-goplugin/compare/v0.1.1...v0.2.0
 [v0.1.1]: https://github.com/slok/terraform-provider-goplugin/compare/v0.1.0...v0.1.1
 [v0.1.0]: https://github.com/slok/terraform-provider-goplugin/releases/tag/v0.1.0
