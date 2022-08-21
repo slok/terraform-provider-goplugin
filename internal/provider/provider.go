@@ -28,8 +28,8 @@ type tfProvider struct {
 	dataSourcePluginsV1 map[string]apiv1.DataSourcePlugin
 }
 
-var pluginsAttributes = tfsdk.MapNestedAttributes(map[string]tfsdk.Attribute{
-	"source_code": {
+var (
+	pluginSourceCodeAttribute = tfsdk.Attribute{
 		Required:    true,
 		Description: `Configuration regarding where the plugin code will be loaded from. Only one must be used of all the methods available`,
 		Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
@@ -49,10 +49,11 @@ var pluginsAttributes = tfsdk.MapNestedAttributes(map[string]tfsdk.Attribute{
 						Type:        types.StringType,
 					},
 					"ref": {
-						Optional:      true,
-						Description:   `Reference of the the repository, only Branch and tags are supported.`,
-						PlanModifiers: tfsdk.AttributePlanModifiers{attributeutils.DefaultValue(types.String{Value: "main"})},
-						Type:          types.StringType,
+						Optional:    true,
+						Description: `Reference of the the repository, only Branch and tags are supported.`,
+						Type:        types.StringType,
+						// TODO(slok): Provider config doesn't support plan modifiers, set default on `Configure` until are supported.
+						// PlanModifiers: tfsdk.AttributePlanModifiers{attributeutils.DefaultValue(types.String{Value: "main"})},
 					},
 					"paths_regex": {
 						Required:    true,
@@ -62,16 +63,16 @@ var pluginsAttributes = tfsdk.MapNestedAttributes(map[string]tfsdk.Attribute{
 				}),
 			},
 		}),
-	},
+	}
 
-	"configuration": {
+	pluginConfigurationAttribute = tfsdk.Attribute{
 		Required:    true,
 		Sensitive:   true,
 		Description: `A JSON string object with the properties that will be passed to the plugin creation/initialization, the plugin is responsible of knowing how to load and use these properties (e.g: API tokens).`,
 		Validators:  []tfsdk.AttributeValidator{attributeutils.NonEmptyString, attributeutils.MustJSONObject},
 		Type:        types.StringType,
-	},
-})
+	}
+)
 
 // GetSchema returns the schema that the user must configure on the provider block.
 func (p *tfProvider) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
@@ -89,12 +90,34 @@ Terraform go plugin provider is a Terraform provider that will let you execute G
 			"resource_plugins_v1": {
 				Optional:    true,
 				Description: `The Block of resource plugins using v1 API that will be loaded by the provider.`,
-				Attributes:  pluginsAttributes,
+				Attributes: tfsdk.MapNestedAttributes(map[string]tfsdk.Attribute{
+					"source_code":   pluginSourceCodeAttribute,
+					"configuration": pluginConfigurationAttribute,
+					"factory_name": {
+						Optional: true,
+						Description: "The name of the plugin factory (in the source code) that will be used to make instances of the plugin, `NewResourcePlugin` by default, " +
+							"specially helpful when a package has multiple plugins inside the same package so it can reuse parts of the code between all the plugins.",
+						Type: types.StringType,
+						// TODO(slok): Provider config doesn't support plan modifiers, set default on `Configure` until are supported.
+						// PlanModifiers: tfsdk.AttributePlanModifiers{attributeutils.DefaultValue(types.String{Value: "NewResourcePlugin"})},
+					},
+				}),
 			},
 			"data_source_plugins_v1": {
 				Optional:    true,
 				Description: `The Block of data source plugins using v1 API that will be loaded by the provider.`,
-				Attributes:  pluginsAttributes,
+				Attributes: tfsdk.MapNestedAttributes(map[string]tfsdk.Attribute{
+					"source_code":   pluginSourceCodeAttribute,
+					"configuration": pluginConfigurationAttribute,
+					"factory_name": {
+						Optional: true,
+						Description: "The name of the plugin factory (in the source code) that will be used to make instances of the plugin, `NewDataSourcePlugin` by default, " +
+							"specially helpful when a package has multiple plugins inside the same package so it can reuse parts of the code between all the plugins.",
+						Type: types.StringType,
+						// TODO(slok): Provider config doesn't support plan modifiers, set default on `Configure` until are supported.
+						// PlanModifiers: tfsdk.AttributePlanModifiers{attributeutils.DefaultValue(types.String{Value: "NewDataSourcePlugin"})},
+					},
+				}),
 			},
 		},
 	}, nil
@@ -109,6 +132,7 @@ type providerData struct {
 type providerDataPluginV1 struct {
 	SourceCode    providerDataPluginV1Source `tfsdk:"source_code"`
 	Configuration types.String               `tfsdk:"configuration"`
+	FactoryName   types.String               `tfsdk:"factory_name"`
 }
 
 type providerDataPluginV1Source struct {
@@ -178,9 +202,15 @@ func (p *tfProvider) loadAPIV1ResourcePlugin(ctx context.Context, pluginFactory 
 		return nil, fmt.Errorf("error loading plugin source code: %w", err)
 	}
 
+	// TODO(slok): Remove when plan modifiers are supported on provider configuration attributes.
+	factoryName := pluginConfig.FactoryName.Value
+	if factoryName == "" {
+		factoryName = apiv1.DefaultResourcePluginFactoryName
+	}
+
 	plugin, err := pluginFactory.NewResourcePlugin(ctx, pluginv1.PluginConfig{
 		SourceCodeRepository: repo,
-		PluginFactoryName:    "NewResourcePlugin", // TODO(slok): Make it configurable by the user.
+		PluginFactoryName:    factoryName,
 		PluginOptions:        pluginConfig.Configuration.Value,
 	})
 	if err != nil {
@@ -196,9 +226,15 @@ func (p *tfProvider) loadAPIV1DataSourcePlugin(ctx context.Context, pluginFactor
 		return nil, fmt.Errorf("error loading plugin source code: %w", err)
 	}
 
+	// TODO(slok): Remove when plan modifiers are supported on provider configuration attributes.
+	factoryName := pluginConfig.FactoryName.Value
+	if factoryName == "" {
+		factoryName = apiv1.DefaultDataSourcePluginFactoryName
+	}
+
 	plugin, err := pluginFactory.NewDataSourcePlugin(ctx, pluginv1.PluginConfig{
 		SourceCodeRepository: repo,
-		PluginFactoryName:    "NewDataSourcePlugin", // TODO(slok): Make it configurable by the user.
+		PluginFactoryName:    factoryName,
 		PluginOptions:        pluginConfig.Configuration.Value,
 	})
 	if err != nil {
@@ -231,9 +267,15 @@ func (p *tfProvider) loadAPIV1PluginSourceCode(ctx context.Context, pluginConfig
 			rgs = append(rgs, r)
 		}
 
+		// TODO(slok): Remove when plan modifiers are supported on provider configuration attributes.
+		ref := pluginConfig.Git.Ref.Value
+		if ref == "" {
+			ref = "main"
+		}
+
 		gitRepo, err := storagegit.NewSourceCodeRepository(storagegit.SourceCodeRepositoryConfig{
 			URL:          pluginConfig.Git.URL.Value,
-			BranchOrTag:  pluginConfig.Git.Ref.Value,
+			BranchOrTag:  ref,
 			MatchRegexes: rgs,
 		})
 		if err != nil {

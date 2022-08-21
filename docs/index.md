@@ -101,6 +101,10 @@ Required:
 - `configuration` (String, Sensitive) A JSON string object with the properties that will be passed to the plugin creation/initialization, the plugin is responsible of knowing how to load and use these properties (e.g: API tokens).
 - `source_code` (Attributes) Configuration regarding where the plugin code will be loaded from. Only one must be used of all the methods available (see [below for nested schema](#nestedatt--data_source_plugins_v1--source_code))
 
+Optional:
+
+- `factory_name` (String) The name of the plugin factory (in the source code) that will be used to make instances of the plugin, `NewDataSourcePlugin` by default, specially helpful when a package has multiple plugins inside the same package so it can reuse parts of the code between all the plugins.
+
 <a id="nestedatt--data_source_plugins_v1--source_code"></a>
 ### Nested Schema for `data_source_plugins_v1.source_code`
 
@@ -131,6 +135,10 @@ Required:
 
 - `configuration` (String, Sensitive) A JSON string object with the properties that will be passed to the plugin creation/initialization, the plugin is responsible of knowing how to load and use these properties (e.g: API tokens).
 - `source_code` (Attributes) Configuration regarding where the plugin code will be loaded from. Only one must be used of all the methods available (see [below for nested schema](#nestedatt--resource_plugins_v1--source_code))
+
+Optional:
+
+- `factory_name` (String) The name of the plugin factory (in the source code) that will be used to make instances of the plugin, `NewResourcePlugin` by default, specially helpful when a package has multiple plugins inside the same package so it can reuse parts of the code between all the plugins.
 
 <a id="nestedatt--resource_plugins_v1--source_code"></a>
 ### Nested Schema for `resource_plugins_v1.source_code`

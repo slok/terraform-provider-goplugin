@@ -20,11 +20,13 @@ type DataSourcePlugin interface {
 	ReadDataSource(ctx context.Context, r ReadDataSourceRequest) (*ReadDataSourceResponse, error)
 }
 
-// NewDataSourcePlugin is the function that the plugin engine will load and run to get the
-// data source plugin that will be executed afterwards. E.g:
+const DefaultDataSourcePluginFactoryName = "NewDataSourcePlugin"
+
+// ResourcePluginFactory is the function type that the plugin engine will load and run to get the plugin that
+// will be executed afterwards. E.g:
 //
 //	func NewDataSourcePlugin(options string) (apiv1.DataSourcePlugin, error) {
 //		//...
-//		return myDataSourcePlugin{}, nil
+//		return myPlugin{}, nil
 //	}
-type NewDataSourcePlugin = func(options string) (DataSourcePlugin, error)
+type DataSourcePluginFactory = func(options string) (DataSourcePlugin, error)
