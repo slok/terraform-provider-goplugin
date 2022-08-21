@@ -70,10 +70,10 @@ func TestResourcePluginCreate(t *testing.T) {
 				PluginOptions:        "",
 				PluginFactoryName:    "NewResourcePlugin",
 			}
-			f := pluginv1.NewFactory()
-			_, err := f.NewResourcePlugin(context.TODO(), config)
+			engine := pluginv1.NewEngine()
+			_, err := engine.NewResourcePlugin(context.TODO(), config)
 			require.NoError(err)
-			p, err := f.NewResourcePlugin(context.TODO(), config)
+			p, err := engine.NewResourcePlugin(context.TODO(), config)
 			require.NoError(err)
 
 			resp, err := p.CreateResource(context.TODO(), test.request)
@@ -133,10 +133,10 @@ func TestResourcePluginRead(t *testing.T) {
 				PluginOptions:        "",
 				PluginFactoryName:    "NewResourcePlugin",
 			}
-			f := pluginv1.NewFactory()
-			_, err := f.NewResourcePlugin(context.TODO(), config)
+			engine := pluginv1.NewEngine()
+			_, err := engine.NewResourcePlugin(context.TODO(), config)
 			require.NoError(err)
-			p, err := f.NewResourcePlugin(context.TODO(), config)
+			p, err := engine.NewResourcePlugin(context.TODO(), config)
 			require.NoError(err)
 
 			resp, err := p.ReadResource(context.TODO(), test.request)
@@ -196,10 +196,10 @@ func TestResourcePluginUpdate(t *testing.T) {
 				PluginOptions:        "",
 				PluginFactoryName:    "NewResourcePlugin",
 			}
-			f := pluginv1.NewFactory()
-			_, err := f.NewResourcePlugin(context.TODO(), config)
+			engine := pluginv1.NewEngine()
+			_, err := engine.NewResourcePlugin(context.TODO(), config)
 			require.NoError(err)
-			p, err := f.NewResourcePlugin(context.TODO(), config)
+			p, err := engine.NewResourcePlugin(context.TODO(), config)
 			require.NoError(err)
 
 			resp, err := p.UpdateResource(context.TODO(), test.request)
@@ -257,10 +257,10 @@ func TestResourcePluginDelete(t *testing.T) {
 				PluginOptions:        "",
 				PluginFactoryName:    "NewResourcePlugin",
 			}
-			f := pluginv1.NewFactory()
-			_, err := f.NewResourcePlugin(context.TODO(), config)
+			engine := pluginv1.NewEngine()
+			_, err := engine.NewResourcePlugin(context.TODO(), config)
 			require.NoError(err)
-			p, err := f.NewResourcePlugin(context.TODO(), config)
+			p, err := engine.NewResourcePlugin(context.TODO(), config)
 			require.NoError(err)
 
 			resp, err := p.DeleteResource(context.TODO(), test.request)
@@ -320,10 +320,10 @@ func TestDataSourcePluginRead(t *testing.T) {
 				PluginOptions:        "",
 				PluginFactoryName:    "NewDataSourcePlugin",
 			}
-			f := pluginv1.NewFactory()
-			_, err := f.NewDataSourcePlugin(context.TODO(), config)
+			engine := pluginv1.NewEngine()
+			_, err := engine.NewDataSourcePlugin(context.TODO(), config)
 			require.NoError(err)
-			p, err := f.NewDataSourcePlugin(context.TODO(), config)
+			p, err := engine.NewDataSourcePlugin(context.TODO(), config)
 			require.NoError(err)
 
 			resp, err := p.ReadDataSource(context.TODO(), test.request)

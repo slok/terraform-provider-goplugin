@@ -19,14 +19,15 @@ import (
 	apiv1 "github.com/slok/terraform-provider-goplugin/pkg/api/v1"
 )
 
-type Factory struct {
+// Engine is the plugin engine that knows how to load, prepare and return new plugins.
+type Engine struct {
 	resourcePluginsCache   sync.Map
 	dataSourcePluginsCache sync.Map
 }
 
-// NewFactory returns a new plugin V1 factory.
-func NewFactory() *Factory {
-	return &Factory{}
+// NewEngine returns a new plugin V1 engine.
+func NewEngine() *Engine {
+	return &Engine{}
 }
 
 // PluginConfig is the configuration that the engine needs to instantiate a new plugin.
@@ -55,7 +56,7 @@ func (p *PluginConfig) defaults() error {
 
 // NewResourcePlugin returns a new plugin based on the plugin source code and the plugin options that will be passed on plugin creation.
 // the resulting plugin will be able to be used.
-func (f *Factory) NewResourcePlugin(ctx context.Context, config PluginConfig) (apiv1.ResourcePlugin, error) {
+func (e *Engine) NewResourcePlugin(ctx context.Context, config PluginConfig) (apiv1.ResourcePlugin, error) {
 	err := config.defaults()
 	if err != nil {
 		return nil, fmt.Errorf("invalid plugin configuration: %w", err)
@@ -67,14 +68,14 @@ func (f *Factory) NewResourcePlugin(ctx context.Context, config PluginConfig) (a
 	}
 
 	// Sanitize plugin source files like validating and ignoring files that should not be loaded.
-	sanitizedPluginSource, err := f.sanitizedPluginSource(ctx, pluginSource)
+	sanitizedPluginSource, err := sanitizedPluginSource(ctx, pluginSource)
 	if err != nil {
 		return nil, fmt.Errorf("invalid plugin source: %w", err)
 	}
 
 	// Get plugin from cache if we already have it.
-	index := f.pluginIndex(ctx, sanitizedPluginSource, config.PluginOptions)
-	p, ok := f.resourcePluginsCache.Load(index)
+	index := pluginIndex(ctx, sanitizedPluginSource, config.PluginOptions, config.PluginFactoryName)
+	p, ok := e.resourcePluginsCache.Load(index)
 	if ok {
 		// Should always be a resource plugin, we control the type internally,
 		// panicking its ok, shouldn't happen.
@@ -94,12 +95,12 @@ func (f *Factory) NewResourcePlugin(ctx context.Context, config PluginConfig) (a
 	}
 
 	// Store plugin in cache.
-	f.resourcePluginsCache.Store(index, plugin)
+	e.resourcePluginsCache.Store(index, plugin)
 
 	return plugin, nil
 }
 
-func (f *Factory) NewDataSourcePlugin(ctx context.Context, config PluginConfig) (apiv1.DataSourcePlugin, error) {
+func (e *Engine) NewDataSourcePlugin(ctx context.Context, config PluginConfig) (apiv1.DataSourcePlugin, error) {
 	err := config.defaults()
 	if err != nil {
 		return nil, fmt.Errorf("invalid plugin configuration: %w", err)
@@ -111,14 +112,14 @@ func (f *Factory) NewDataSourcePlugin(ctx context.Context, config PluginConfig) 
 	}
 
 	// Sanitize plugin source files like validating and ignoring files that should not be loaded.
-	sanitizedPluginSource, err := f.sanitizedPluginSource(ctx, pluginSource)
+	sanitizedPluginSource, err := sanitizedPluginSource(ctx, pluginSource)
 	if err != nil {
 		return nil, fmt.Errorf("invalid plugin source: %w", err)
 	}
 
 	// Get plugin from cache if we already have it.
-	index := f.pluginIndex(ctx, sanitizedPluginSource, config.PluginOptions)
-	p, ok := f.dataSourcePluginsCache.Load(index)
+	index := pluginIndex(ctx, sanitizedPluginSource, config.PluginOptions, config.PluginFactoryName)
+	p, ok := e.dataSourcePluginsCache.Load(index)
 	if ok {
 		// Should always be a data source plugin, we control the type internally,
 		// panicking its ok, shouldn't happen.
@@ -138,14 +139,14 @@ func (f *Factory) NewDataSourcePlugin(ctx context.Context, config PluginConfig) 
 	}
 
 	// Store plugin in cache.
-	f.resourcePluginsCache.Store(index, plugin)
+	e.resourcePluginsCache.Store(index, plugin)
 
 	return plugin, nil
 }
 
 var packageRegexp = regexp.MustCompile(`(?m)^package +([^\s]+) *$`)
 
-func (f *Factory) sanitizedPluginSource(ctx context.Context, pluginSource []string) ([]string, error) {
+func sanitizedPluginSource(ctx context.Context, pluginSource []string) ([]string, error) {
 	newSrc := []string{}
 	for _, src := range pluginSource {
 		// Discover package name.
@@ -167,10 +168,10 @@ func (f *Factory) sanitizedPluginSource(ctx context.Context, pluginSource []stri
 	return newSrc, nil
 }
 
-func (f *Factory) pluginIndex(ctx context.Context, pluginSource []string, pluginOptions string) string {
+func pluginIndex(ctx context.Context, pluginSource []string, pluginOptions string, factoryName string) string {
 	// Wrap all the plugin as a single string.
 	sort.Strings(pluginSource)
-	allPlugin := strings.Join(pluginSource, "\n") + pluginOptions
+	allPlugin := strings.Join(pluginSource, "\n") + pluginOptions + factoryName
 
 	// Get plugin SHA.
 	sha := sha256.Sum256([]byte(allPlugin))

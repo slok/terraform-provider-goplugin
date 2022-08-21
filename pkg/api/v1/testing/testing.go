@@ -25,9 +25,7 @@ func NewTestResourcePlugin(ctx context.Context, pluginDir string, pluginFactoryN
 		return nil, fmt.Errorf("could not read dir %q files: %w", pluginDir, err)
 	}
 
-	f := pluginv1.NewFactory()
-
-	return f.NewResourcePlugin(ctx, pluginv1.PluginConfig{
+	return pluginv1.NewEngine().NewResourcePlugin(ctx, pluginv1.PluginConfig{
 		SourceCodeRepository: storage.StaticSourceCodeRepository(data),
 		PluginFactoryName:    pluginFactoryName,
 		PluginOptions:        configuration,
@@ -49,9 +47,7 @@ func NewTestDataSourcePlugin(ctx context.Context, pluginDir string, pluginFactor
 		return nil, fmt.Errorf("could not read dir %q files: %w", pluginDir, err)
 	}
 
-	f := pluginv1.NewFactory()
-
-	return f.NewDataSourcePlugin(ctx, pluginv1.PluginConfig{
+	return pluginv1.NewEngine().NewDataSourcePlugin(ctx, pluginv1.PluginConfig{
 		SourceCodeRepository: storage.StaticSourceCodeRepository(data),
 		PluginFactoryName:    pluginFactoryName,
 		PluginOptions:        configuration,
