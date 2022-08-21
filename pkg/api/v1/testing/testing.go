@@ -19,7 +19,7 @@ import (
 // detected on the tests instead by running Terraform directly.
 //
 // Note: All plugin files must be at one dir depth level, this is by design on the provider.
-func NewTestResourcePlugin(ctx context.Context, pluginDir string, options string) (apiv1.ResourcePlugin, error) {
+func NewTestResourcePlugin(ctx context.Context, pluginDir string, pluginFactoryName string, configuration string) (apiv1.ResourcePlugin, error) {
 	data, err := loadDirFiles(pluginDir)
 	if err != nil {
 		return nil, fmt.Errorf("could not read dir %q files: %w", pluginDir, err)
@@ -27,7 +27,11 @@ func NewTestResourcePlugin(ctx context.Context, pluginDir string, options string
 
 	f := pluginv1.NewFactory()
 
-	return f.NewResourcePlugin(ctx, storage.StaticSourceCodeRepository(data), options)
+	return f.NewResourcePlugin(ctx, pluginv1.PluginConfig{
+		SourceCodeRepository: storage.StaticSourceCodeRepository(data),
+		PluginFactoryName:    pluginFactoryName,
+		PluginOptions:        configuration,
+	})
 }
 
 // NewTestDataSourcePlugin is a helper util to load a plugin using the engine that
@@ -39,7 +43,7 @@ func NewTestResourcePlugin(ctx context.Context, pluginDir string, options string
 // detected on the tests instead by running Terraform directly.
 //
 // Note: All plugin files must be at one dir depth level, this is by design on the provider.
-func NewTestDataSourcePlugin(ctx context.Context, pluginDir string, options string) (apiv1.DataSourcePlugin, error) {
+func NewTestDataSourcePlugin(ctx context.Context, pluginDir string, pluginFactoryName string, configuration string) (apiv1.DataSourcePlugin, error) {
 	data, err := loadDirFiles(pluginDir)
 	if err != nil {
 		return nil, fmt.Errorf("could not read dir %q files: %w", pluginDir, err)
@@ -47,7 +51,11 @@ func NewTestDataSourcePlugin(ctx context.Context, pluginDir string, options stri
 
 	f := pluginv1.NewFactory()
 
-	return f.NewDataSourcePlugin(ctx, storage.StaticSourceCodeRepository(data), options)
+	return f.NewDataSourcePlugin(ctx, pluginv1.PluginConfig{
+		SourceCodeRepository: storage.StaticSourceCodeRepository(data),
+		PluginFactoryName:    pluginFactoryName,
+		PluginOptions:        configuration,
+	})
 }
 
 func loadDirFiles(dir string) ([]string, error) {

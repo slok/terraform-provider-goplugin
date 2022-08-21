@@ -135,7 +135,7 @@ func TestCreateResource(t *testing.T) {
 				"api_url":      srv.URL,
 			})
 
-			p, err := apiv1testing.NewTestResourcePlugin(context.TODO(), "./", string(config))
+			p, err := apiv1testing.NewTestResourcePlugin(context.TODO(), "./", "NewResourcePlugin", string(config))
 			//p, err := plugin.NewResourcePlugin(string(config)) // Used while tests development the tests to check easily the coverage.
 			require.NoError(err)
 
@@ -238,7 +238,7 @@ func TestReadResource(t *testing.T) {
 				"api_url":      srv.URL,
 			})
 
-			p, err := apiv1testing.NewTestResourcePlugin(context.TODO(), "./", string(config))
+			p, err := apiv1testing.NewTestResourcePlugin(context.TODO(), "./", "NewResourcePlugin", string(config))
 			//p, err := plugin.NewResourcePlugin(string(config)) // Used while tests development the tests to check easily the coverage.
 			require.NoError(err)
 
@@ -316,7 +316,7 @@ func TestDeleteResource(t *testing.T) {
 				"api_url":      srv.URL,
 			})
 
-			p, err := apiv1testing.NewTestResourcePlugin(context.TODO(), "./", string(config))
+			p, err := apiv1testing.NewTestResourcePlugin(context.TODO(), "./", "NewResourcePlugin", string(config))
 			//p, err := plugin.NewResourcePlugin(string(config)) // Used while tests development the tests to check easily the coverage.
 			require.NoError(err)
 
@@ -429,7 +429,7 @@ func TestUpdateResource(t *testing.T) {
 				"api_url":      srv.URL,
 			})
 
-			p, err := apiv1testing.NewTestResourcePlugin(context.TODO(), "./", string(config))
+			p, err := apiv1testing.NewTestResourcePlugin(context.TODO(), "./", "NewResourcePlugin", string(config))
 			//p, err := plugin.NewResourcePlugin(string(config)) // Used while tests development the tests to check easily the coverage.
 			require.NoError(err)
 
