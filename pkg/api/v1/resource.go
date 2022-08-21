@@ -1,6 +1,8 @@
 package v1
 
-import "context"
+import (
+	"context"
+)
 
 type CreateResourceRequest struct {
 	// ResourceData is the data the user must provider to handle correctly.
@@ -70,11 +72,13 @@ type ResourcePlugin interface {
 	DeleteResource(ctx context.Context, r DeleteResourceRequest) (*DeleteResourceResponse, error)
 }
 
-// NewResourcePlugin is the function that the plugin engine will load and run to get the plugin that
+const DefaultResourcePluginFactoryName = "NewResourcePlugin"
+
+// ResourcePluginFactory is the function type that the plugin engine will load and run to get the plugin that
 // will be executed afterwards. E.g:
 //
 //	func NewResourcePlugin(options string) (apiv1.ResourcePlugin, error) {
 //		//...
 //		return myPlugin{}, nil
 //	}
-type NewResourcePlugin = func(options string) (ResourcePlugin, error)
+type ResourcePluginFactory = func(options string) (ResourcePlugin, error)

@@ -180,7 +180,7 @@ func (f *Factory) pluginIndex(ctx context.Context, pluginSource []string, plugin
 
 const pluginMemFSDir = "plugin"
 
-func loadRawResourcePluginFactory(ctx context.Context, pluginFactoryName string, srcs []string) (apiv1.NewResourcePlugin, error) {
+func loadRawResourcePluginFactory(ctx context.Context, pluginFactoryName string, srcs []string) (apiv1.ResourcePluginFactory, error) {
 	yaegiInterp, err := newPluginYaegiInterpreter(ctx, srcs, pluginMemFSDir)
 	if err != nil {
 		return nil, fmt.Errorf("could not create Yaegi interpreter: %w", err)
@@ -202,7 +202,7 @@ func loadRawResourcePluginFactory(ctx context.Context, pluginFactoryName string,
 		return nil, fmt.Errorf("could not get plugin: %w", err)
 	}
 
-	pluginFunc, ok := pluginFuncTmp.Interface().(apiv1.NewResourcePlugin)
+	pluginFunc, ok := pluginFuncTmp.Interface().(apiv1.ResourcePluginFactory)
 	if !ok {
 		return nil, fmt.Errorf("invalid plugin type")
 	}
@@ -210,7 +210,7 @@ func loadRawResourcePluginFactory(ctx context.Context, pluginFactoryName string,
 	return pluginFunc, nil
 }
 
-func loadRawDataSourcePluginFactory(ctx context.Context, pluginFactoryName string, srcs []string) (apiv1.NewDataSourcePlugin, error) {
+func loadRawDataSourcePluginFactory(ctx context.Context, pluginFactoryName string, srcs []string) (apiv1.DataSourcePluginFactory, error) {
 	yaegiInterp, err := newPluginYaegiInterpreter(ctx, srcs, pluginMemFSDir)
 	if err != nil {
 		return nil, fmt.Errorf("could not create Yaegi interpreter: %w", err)
@@ -232,7 +232,7 @@ func loadRawDataSourcePluginFactory(ctx context.Context, pluginFactoryName strin
 		return nil, fmt.Errorf("could not get plugin: %w", err)
 	}
 
-	pluginFunc, ok := pluginFuncTmp.Interface().(apiv1.NewDataSourcePlugin)
+	pluginFunc, ok := pluginFuncTmp.Interface().(apiv1.DataSourcePluginFactory)
 	if !ok {
 		return nil, fmt.Errorf("invalid plugin type")
 	}

@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## Added
+
+- Plugins can customize the name of the plugin factory that the plugin engine will use to make plugin instances.
+
 ## [v0.2.0] - 2022-08-21
 
 ## Added

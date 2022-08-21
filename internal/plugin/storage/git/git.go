@@ -27,7 +27,7 @@ func (c *SourceCodeRepositoryConfig) defaults() error {
 	}
 
 	if c.BranchOrTag == "" {
-		c.BranchOrTag = "main"
+		return fmt.Errorf("ref is required")
 	}
 
 	return nil
