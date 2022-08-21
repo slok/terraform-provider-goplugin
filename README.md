@@ -45,11 +45,11 @@ Check [examples](./examples)
 
 ### Resource
 
-- You will need to implement [`NewResourcePlugin`][apiv1-factory-method-godoc] method.
-- You will need to implement interface: [`ResourcePlugin`][apiv1-interface-godoc] interface.
-- You may use [`NewTestResourcePlugin`][apiv1-testing-method-godoc] for writing tests of the plugin.
+- You will need to implement [`NewResourcePlugin`][resource-apiv1-factory-method-godoc] method.
+- You will need to implement interface: [`ResourcePlugin`][resource-apiv1-interface-godoc] interface.
+- You may use [`NewTestResourcePlugin`][apiv1-testing-godoc] for writing tests of the plugin.
 
-Example of a NOOP plugin:
+Example of a NOOP resource plugin:
 
 ```go
 package terraform
@@ -80,6 +80,34 @@ func (p plugin) DeleteResource(ctx context.Context, r apiv1.DeleteResourceReques
 
 func (p plugin) UpdateResource(ctx context.Context, r apiv1.UpdateResourceRequest) (*apiv1.UpdateResourceResponse, error) {
  return &apiv1.UpdateResourceResponse{}, nil
+}
+```
+
+### Data source
+
+- You will need to implement [`NewDataSourcePlugin`][data-source-apiv1-factory-method-godoc] method.
+- You will need to implement interface: [`DataSourcePlugin`][data-source-apiv1-interface-godoc] interface.
+- You may use [`NewTestDataSourcePlugin`][apiv1-testing-godoc] for writing tests of the plugin.
+
+Example of a NOOP data source plugin:
+
+```go
+package terraform
+
+import (
+ "context"
+
+ apiv1 "github.com/slok/terraform-provider-goplugin/pkg/api/v1"
+)
+
+func NewDataSourcePlugin(opts string) (apiv1.DataSourcePlugin, error) {
+ return plugin{}, nil
+}
+
+type plugin struct{}
+
+func (p plugin) ReadDataSource(ctx context.Context, r apiv1.ReadDataSourceRequest) (*apiv1.ReadDataSourceResponse, error) {
+ return &apiv1.ReadDataSourceResponse{}, nil
 }
 ```
 
@@ -159,7 +187,9 @@ terraform plan
 [gist]: https://gist.github.com/
 [computed]: https://www.terraform.io/plugin/sdkv2/schemas/schema-behaviors#computed
 [godoc-v1]: https://pkg.go.dev/github.com/slok/terraform-provider-goplugin/pkg/api/v1
-[apiv1-factory-method-godoc]: https://pkg.go.dev/github.com/slok/terraform-provider-goplugin/pkg/api/v1#NewResourcePlugin
-[apiv1-interface-godoc]: https://pkg.go.dev/github.com/slok/terraform-provider-goplugin/pkg/api/v1#ResourcePlugin
-[apiv1-testing-method-godoc]: https://pkg.go.dev/github.com/slok/terraform-provider-goplugin/pkg/api/v1/testing
+[resource-apiv1-factory-method-godoc]: https://pkg.go.dev/github.com/slok/terraform-provider-goplugin/pkg/api/v1#NewResourcePlugin
+[resource-apiv1-interface-godoc]: https://pkg.go.dev/github.com/slok/terraform-provider-goplugin/pkg/api/v1#ResourcePlugin
+[data-source-apiv1-factory-method-godoc]: https://pkg.go.dev/github.com/slok/terraform-provider-goplugin/pkg/api/v1#NewDataSourcePlugin
+[data-source-apiv1-interface-godoc]: https://pkg.go.dev/github.com/slok/terraform-provider-goplugin/pkg/api/v1#DataSourcePlugin
+[apiv1-testing-godoc]: https://pkg.go.dev/github.com/slok/terraform-provider-goplugin/pkg/api/v1/testing
 [examples]: https://github.com/slok/terraform-provider-goplugin/tree/main/examples
