@@ -55,7 +55,7 @@ Check [examples](https://github.com/slok/terraform-provider-goplugin/tree/main/e
 				Required:      true,
 				PlanModifiers: tfsdk.AttributePlanModifiers{resource.RequiresReplace()},
 			},
-			"resource_data": {
+			"attributes": {
 				Description: `A JSON string object with the properties that will be passed to the plugin
 								resource, the plugin is responsible of knowing how to load and use these properties.`,
 				Type:          types.StringType,
@@ -100,7 +100,7 @@ func (r resourcePluginV1) Create(ctx context.Context, req resource.CreateRequest
 	}
 
 	// Execute plugin.
-	pluginResp, err := plugin.CreateResource(ctx, apiv1.CreateResourceRequest{ResourceData: tfResourcePlan.ResourceData.Value})
+	pluginResp, err := plugin.CreateResource(ctx, apiv1.CreateResourceRequest{Attributes: tfResourcePlan.Attributes.Value})
 	if err != nil {
 		resp.Diagnostics.AddError("Error executing plugin", "Plugin execution end in error: "+err.Error())
 		return
@@ -116,10 +116,10 @@ func (r resourcePluginV1) Create(ctx context.Context, req resource.CreateRequest
 
 	// Map result.
 	newTfPluginV1 := ResourcePluginV1{
-		ID:           types.String{Value: id},
-		ResourceID:   types.String{Value: pluginResp.ID},
-		PluginID:     tfResourcePlan.PluginID,
-		ResourceData: tfResourcePlan.ResourceData,
+		ID:         types.String{Value: id},
+		ResourceID: types.String{Value: pluginResp.ID},
+		PluginID:   tfResourcePlan.PluginID,
+		Attributes: tfResourcePlan.Attributes,
 	}
 
 	diags = resp.State.Set(ctx, newTfPluginV1)
@@ -166,10 +166,10 @@ func (r resourcePluginV1) Read(ctx context.Context, req resource.ReadRequest, re
 
 	// Map result.
 	newTfPluginV1 := ResourcePluginV1{
-		ID:           tfResourceState.ID,
-		ResourceID:   types.String{Value: resourceID},
-		PluginID:     types.String{Value: pluginID},
-		ResourceData: types.String{Value: pluginResp.ResourceData},
+		ID:         tfResourceState.ID,
+		ResourceID: types.String{Value: resourceID},
+		PluginID:   types.String{Value: pluginID},
+		Attributes: types.String{Value: pluginResp.Attributes},
 	}
 
 	diags = resp.State.Set(ctx, newTfPluginV1)
@@ -217,9 +217,9 @@ func (r resourcePluginV1) Update(ctx context.Context, req resource.UpdateRequest
 
 	// Execute plugin.
 	_, err = plugin.UpdateResource(ctx, apiv1.UpdateResourceRequest{
-		ID:                resourceID,
-		ResourceData:      tfResourcePlan.ResourceData.Value,
-		ResourceDataState: tfResourceState.ResourceData.Value,
+		ID:              resourceID,
+		Attributes:      tfResourcePlan.Attributes.Value,
+		AttributesState: tfResourceState.Attributes.Value,
 	})
 	if err != nil {
 		resp.Diagnostics.AddError("Error executing plugin", "Plugin execution end in error: "+err.Error())
@@ -228,10 +228,10 @@ func (r resourcePluginV1) Update(ctx context.Context, req resource.UpdateRequest
 
 	// Map result.
 	newTfPluginV1 := ResourcePluginV1{
-		ID:           tfResourceState.ID,         // Once on state, never changes.
-		ResourceID:   tfResourceState.ResourceID, // Once on state, never changes.
-		PluginID:     tfResourcePlan.PluginID,
-		ResourceData: tfResourcePlan.ResourceData,
+		ID:         tfResourceState.ID,         // Once on state, never changes.
+		ResourceID: tfResourceState.ResourceID, // Once on state, never changes.
+		PluginID:   tfResourcePlan.PluginID,
+		Attributes: tfResourcePlan.Attributes,
 	}
 
 	diags = resp.State.Set(ctx, newTfPluginV1)

@@ -2,11 +2,13 @@ package v1
 
 import "context"
 
+// ReadDataSourceRequest is the request that the plugin will receive on resource `Read` operation.
 type ReadDataSourceRequest struct {
-	// Arguments is the data the user must provide so the data source can return a result.
-	Arguments string
+	// Attributes is the data the Terraform user will provide to the plugin to manage the resource.
+	Attributes string
 }
 
+// ReadDataSourceResponse is the response that the plugin will return after resource `Read` operation.
 type ReadDataSourceResponse struct {
 	// Result is the result the plugin will return to Terraform.
 	Result string
@@ -20,6 +22,8 @@ type DataSourcePlugin interface {
 	ReadDataSource(ctx context.Context, r ReadDataSourceRequest) (*ReadDataSourceResponse, error)
 }
 
+// DefaultDataSourcePluginFactoryName is the default name used by the plugin engine to search for the plugin factory
+// on the plugin source code.
 const DefaultDataSourcePluginFactoryName = "NewDataSourcePlugin"
 
 // ResourcePluginFactory is the function type that the plugin engine will load and run to get the plugin that

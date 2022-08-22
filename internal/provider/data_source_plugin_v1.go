@@ -38,7 +38,7 @@ Check [examples](https://github.com/slok/terraform-provider-goplugin/tree/main/e
 				Type:        types.StringType,
 				Required:    true,
 			},
-			"arguments": {
+			"attributes": {
 				Description: `A JSON string object with the properties that will be passed to the data source
 							  plugin, the plugin is responsible of knowing how to load and use these properties.`,
 				Type:       types.StringType,
@@ -93,7 +93,7 @@ func (d dataSourcePluginV1) Read(ctx context.Context, req datasource.ReadRequest
 
 	// Execute plugin.
 	pluginResp, err := plugin.ReadDataSource(ctx, v1.ReadDataSourceRequest{
-		Arguments: tfConfig.Arguments.Value,
+		Attributes: tfConfig.Attributes.Value,
 	})
 	if err != nil {
 		resp.Diagnostics.AddError("Error executing plugin", "Plugin execution end in error: "+err.Error())

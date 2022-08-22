@@ -31,7 +31,7 @@ Check [examples](https://github.com/slok/terraform-provider-goplugin/tree/main/e
 resource "goplugin_plugin_v1" "os_file_test" {
   plugin_id = "os_file"
 
-  resource_data = jsonencode({
+  attributes = jsonencode({
     path = "/tmp/hello-world.txt"
     content = "Hello world!"
     mode = 644
@@ -44,10 +44,10 @@ resource "goplugin_plugin_v1" "os_file_test" {
 
 ### Required
 
+- `attributes` (String) A JSON string object with the properties that will be passed to the plugin
+								resource, the plugin is responsible of knowing how to load and use these properties.
 - `plugin_id` (String) The ID of the plugin to use, must be loaded and registered by the provider.
 							    To avoid inconsistencies, if changed the resource will be recreated.
-- `resource_data` (String) A JSON string object with the properties that will be passed to the plugin
-								resource, the plugin is responsible of knowing how to load and use these properties.
 
 ### Read-Only
 

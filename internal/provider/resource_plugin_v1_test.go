@@ -36,10 +36,10 @@ provider goplugin {
 `
 
 type expTestResourcePluginv1 struct {
-	ID           string
-	ResourceID   string
-	PluginID     string
-	ResourceData string
+	ID         string
+	ResourceID string
+	PluginID   string
+	Attributes string
 }
 
 func assertFileMissing(t *testing.T, file string) resource.TestCheckFunc {
@@ -80,17 +80,17 @@ func TestAccResourcePlugingV1CreateDelete(t *testing.T) {
 			config: `
 resource "goplugin_plugin_v1" "test" {
   plugin_id = "missing"
-  resource_data = jsonencode({})
+  attributes = jsonencode({})
 }
 `,
 			expErr: regexp.MustCompile(`"missing" plugin is not loaded`),
 		},
 
-		"A not json object 'resource_data' should fail.": {
+		"A not json object 'attributes' should fail.": {
 			config: `
 resource "goplugin_plugin_v1" "test" {
   plugin_id = "test_file"
-  resource_data = "{"
+  attributes = "{"
 }
 `,
 			expErr: regexp.MustCompile(`Attribute must be JSON object`),
@@ -100,17 +100,17 @@ resource "goplugin_plugin_v1" "test" {
 			config: `
 resource "goplugin_plugin_v1" "test" {
   plugin_id = "test_file"
-  resource_data = jsonencode({
+  attributes = jsonencode({
     path = "/tmp/test.txt"
     content = "this is a test"
   })
 }
 `,
 			expState: expTestResourcePluginv1{
-				ID:           `test_file//tmp/test.txt`,
-				ResourceID:   `/tmp/test.txt`,
-				PluginID:     `test_file`,
-				ResourceData: `{"content":"this is a test","path":"/tmp/test.txt"}`,
+				ID:         `test_file//tmp/test.txt`,
+				ResourceID: `/tmp/test.txt`,
+				PluginID:   `test_file`,
+				Attributes: `{"content":"this is a test","path":"/tmp/test.txt"}`,
 			},
 			expFile:        "/tmp/test.txt",
 			expFileContent: "this is a test",
@@ -126,7 +126,7 @@ resource "goplugin_plugin_v1" "test" {
 					resource.TestCheckResourceAttr("goplugin_plugin_v1.test", "id", test.expState.ID),
 					resource.TestCheckResourceAttr("goplugin_plugin_v1.test", "resource_id", test.expState.ResourceID),
 					resource.TestCheckResourceAttr("goplugin_plugin_v1.test", "plugin_id", test.expState.PluginID),
-					resource.TestCheckResourceAttr("goplugin_plugin_v1.test", "resource_data", test.expState.ResourceData),
+					resource.TestCheckResourceAttr("goplugin_plugin_v1.test", "attributes", test.expState.Attributes),
 					assertFileExistsWithContent(t, test.expFile, test.expFileContent),
 				)
 			}
@@ -168,7 +168,7 @@ func TestAccResourcePlugingV1Update(t *testing.T) {
 			configCreate: `
 resource "goplugin_plugin_v1" "test" {
   plugin_id = "test_file"
-  resource_data = jsonencode({
+  attributes = jsonencode({
     path = "/tmp/test.txt"
     content = "is this a test?"
   })
@@ -178,17 +178,17 @@ resource "goplugin_plugin_v1" "test" {
 			configUpdate: `
 resource "goplugin_plugin_v1" "test" {
   plugin_id = "test_file"
-  resource_data = jsonencode({
+  attributes = jsonencode({
     path = "/tmp/test.txt"
     content = "this is a test"
   })
 }
 `,
 			expState: expTestResourcePluginv1{
-				ID:           `test_file//tmp/test.txt`,
-				ResourceID:   `/tmp/test.txt`,
-				PluginID:     `test_file`,
-				ResourceData: `{"content":"this is a test","path":"/tmp/test.txt"}`,
+				ID:         `test_file//tmp/test.txt`,
+				ResourceID: `/tmp/test.txt`,
+				PluginID:   `test_file`,
+				Attributes: `{"content":"this is a test","path":"/tmp/test.txt"}`,
 			},
 			expFile:              "/tmp/test.txt",
 			expFileContentCreate: "is this a test?",
@@ -226,7 +226,7 @@ resource "goplugin_plugin_v1" "test" {
 							resource.TestCheckResourceAttr("goplugin_plugin_v1.test", "id", test.expState.ID),
 							resource.TestCheckResourceAttr("goplugin_plugin_v1.test", "resource_id", test.expState.ResourceID),
 							resource.TestCheckResourceAttr("goplugin_plugin_v1.test", "plugin_id", test.expState.PluginID),
-							resource.TestCheckResourceAttr("goplugin_plugin_v1.test", "resource_data", test.expState.ResourceData),
+							resource.TestCheckResourceAttr("goplugin_plugin_v1.test", "attributes", test.expState.Attributes),
 							assertFileExistsWithContent(t, test.expFile, test.expFileContentUpdate),
 						),
 					},

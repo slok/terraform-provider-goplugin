@@ -44,7 +44,7 @@ func TestResourcePluginCreate(t *testing.T) {
 		"A correct plugin should return the correct result.": {
 			pluginPaths: pluginSrcsOk,
 			request: apiv1.CreateResourceRequest{
-				ResourceData: "this is a test",
+				Attributes: "this is a test",
 			},
 			expResponse: &apiv1.CreateResourceResponse{
 				ID: "this is a test_test1",
@@ -110,7 +110,7 @@ func TestResourcePluginRead(t *testing.T) {
 				ID: "this is a test",
 			},
 			expResponse: &apiv1.ReadResourceResponse{
-				ResourceData: "this is a test_test1",
+				Attributes: "this is a test_test1",
 			},
 		},
 	}
@@ -170,9 +170,9 @@ func TestResourcePluginUpdate(t *testing.T) {
 		"A correct plugin should return the correct result.": {
 			pluginPaths: pluginSrcsOk,
 			request: apiv1.UpdateResourceRequest{
-				ID:                "test1",
-				ResourceData:      "This is",
-				ResourceDataState: " a test",
+				ID:              "test1",
+				Attributes:      "This is",
+				AttributesState: " a test",
 			},
 			expResponse: &apiv1.UpdateResourceResponse{},
 		},
@@ -294,7 +294,7 @@ func TestDataSourcePluginRead(t *testing.T) {
 		"A correct plugin should return the correct result.": {
 			pluginPaths: pluginSrcsOk,
 			request: apiv1.ReadDataSourceRequest{
-				Arguments: "this is a test",
+				Attributes: "this is a test",
 			},
 			expResponse: &apiv1.ReadDataSourceResponse{
 				Result: "this is a testfrom_data_source",

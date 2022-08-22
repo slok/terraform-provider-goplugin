@@ -9,13 +9,13 @@ import (
 	apiv1 "github.com/slok/terraform-provider-goplugin/pkg/api/v1"
 )
 
-type ResourceData struct {
+type Attributes struct {
 	Path    string `json:"path"`
 	Content string `json:"content"`
 }
 
-func (r ResourceData) validate() error {
-	if r.Path == "" {
+func (a Attributes) validate() error {
+	if a.Path == "" {
 		return fmt.Errorf("path is required")
 	}
 
@@ -29,24 +29,24 @@ func NewResourcePlugin(config string) (apiv1.ResourcePlugin, error) {
 type plugin struct{}
 
 func (p plugin) CreateResource(ctx context.Context, r apiv1.CreateResourceRequest) (*apiv1.CreateResourceResponse, error) {
-	rd := ResourceData{}
-	err := json.Unmarshal([]byte(r.ResourceData), &rd)
+	att := Attributes{}
+	err := json.Unmarshal([]byte(r.Attributes), &att)
 	if err != nil {
 		return nil, fmt.Errorf("could not unmarshal JSON data: %w", err)
 	}
 
-	err = rd.validate()
+	err = att.validate()
 	if err != nil {
 		return nil, fmt.Errorf("invalid resource data: %w", err)
 	}
 
-	err = os.WriteFile(rd.Path, []byte(rd.Content), 0644)
+	err = os.WriteFile(att.Path, []byte(att.Content), 0644)
 	if err != nil {
 		return nil, fmt.Errorf("could not write file: %w", err)
 	}
 
 	return &apiv1.CreateResourceResponse{
-		ID: rd.Path,
+		ID: att.Path,
 	}, nil
 }
 
@@ -56,7 +56,7 @@ func (p plugin) ReadResource(ctx context.Context, r apiv1.ReadResourceRequest) (
 		return nil, fmt.Errorf("could not read file: %w", err)
 	}
 
-	res, err := json.Marshal(ResourceData{
+	res, err := json.Marshal(Attributes{
 		Path:    r.ID,
 		Content: string(data),
 	})
@@ -65,7 +65,7 @@ func (p plugin) ReadResource(ctx context.Context, r apiv1.ReadResourceRequest) (
 	}
 
 	return &apiv1.ReadResourceResponse{
-		ResourceData: string(res),
+		Attributes: string(res),
 	}, nil
 }
 
@@ -83,13 +83,13 @@ func (p plugin) DeleteResource(ctx context.Context, r apiv1.DeleteResourceReques
 }
 
 func (p plugin) UpdateResource(ctx context.Context, r apiv1.UpdateResourceRequest) (*apiv1.UpdateResourceResponse, error) {
-	rd := ResourceData{}
-	err := json.Unmarshal([]byte(r.ResourceData), &rd)
+	att := Attributes{}
+	err := json.Unmarshal([]byte(r.Attributes), &att)
 	if err != nil {
 		return nil, fmt.Errorf("could not unmarshal JSON data: %w", err)
 	}
 
-	err = os.WriteFile(rd.Path, []byte(rd.Content), 0644)
+	err = os.WriteFile(att.Path, []byte(att.Content), 0644)
 	if err != nil {
 		return nil, fmt.Errorf("could not write file: %w", err)
 	}

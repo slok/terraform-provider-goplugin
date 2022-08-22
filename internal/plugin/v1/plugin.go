@@ -169,12 +169,12 @@ func sanitizedPluginSource(ctx context.Context, pluginSource []string) ([]string
 }
 
 func pluginIndex(ctx context.Context, pluginSource []string, pluginOptions string, factoryName string) string {
-	// Wrap all the plugin as a single string.
+	// Wrap all the plugin information as a single string bundle.
 	sort.Strings(pluginSource)
-	allPlugin := strings.Join(pluginSource, "\n") + pluginOptions + factoryName
+	bundle := strings.Join(pluginSource, "") + pluginOptions + factoryName
 
-	// Get plugin SHA.
-	sha := sha256.Sum256([]byte(allPlugin))
+	// Get plugin bundle SHA.
+	sha := sha256.Sum256([]byte(bundle))
 
 	return fmt.Sprintf("%x", sha)
 }

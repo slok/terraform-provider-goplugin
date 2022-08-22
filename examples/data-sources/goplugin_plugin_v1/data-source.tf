@@ -3,7 +3,7 @@
 # This plugin gets file information from the sytesm.
 data "goplugin_plugin_v1" "os_file_test" {
   plugin_id = "os_file"
-  arguments = jsonencode({
+  attributes = jsonencode({
     path = "/tmp/hello-world.txt"
   })
 }

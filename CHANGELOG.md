@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## Beaking
+
+- On `plugin_v1` resources, `resource_data` renamed to `attributes`.
+- On `plugin_v1` data source, `arguments` renamed to `attributes`.
+
 ## Added
 
 - Plugins can customize the name of the plugin factory that the plugin engine will use to make plugin instances.

@@ -14,6 +14,6 @@ func NewDataSourcePlugin(config string) (apiv1.DataSourcePlugin, error) {
 
 func (p plugin) ReadDataSource(ctx context.Context, r apiv1.ReadDataSourceRequest) (*apiv1.ReadDataSourceResponse, error) {
 	return &apiv1.ReadDataSourceResponse{
-		Result: r.Arguments,
+		Result: r.Attributes,
 	}, nil
 }

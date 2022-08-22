@@ -26,7 +26,7 @@ func (c *Configuration) validate() error {
 	return nil
 }
 
-type ResourceData struct {
+type Attributes struct {
 	Description string            `json:"description"`
 	Public      bool              `json:"public"`
 	Files       map[string]string `json:"files"`
@@ -34,10 +34,10 @@ type ResourceData struct {
 
 type Gist struct {
 	ID string
-	ResourceData
+	Attributes
 }
 
-func (r ResourceData) validate() error {
+func (r Attributes) validate() error {
 	for name, content := range r.Files {
 		if name == "" {
 			return fmt.Errorf("name of file is required")

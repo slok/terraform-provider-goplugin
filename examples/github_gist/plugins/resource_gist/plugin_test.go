@@ -46,7 +46,7 @@ func TestCreateResource(t *testing.T) {
 		"Without valid resource data we should fail.": {
 			mock: func(t *testing.T) http.Handler { return nil },
 			request: apiv1.CreateResourceRequest{
-				ResourceData: "{dadsad[sdasdsa",
+				Attributes: "{dadsad[sdasdsa",
 			},
 			expErr: true,
 		},
@@ -63,7 +63,7 @@ func TestCreateResource(t *testing.T) {
 				}
 			},
 			request: apiv1.CreateResourceRequest{
-				ResourceData: `{"description":"test-desc","public":true,"files":{"f1": "d1", "f2": "d2"}}`,
+				Attributes: `{"description":"test-desc","public":true,"files":{"f1": "d1", "f2": "d2"}}`,
 			},
 			expErr: true,
 		},
@@ -80,7 +80,7 @@ func TestCreateResource(t *testing.T) {
 				}
 			},
 			request: apiv1.CreateResourceRequest{
-				ResourceData: `{"description":"test-desc","public":true,"files":{"f1": "d1", "f2": "d2"}}`,
+				Attributes: `{"description":"test-desc","public":true,"files":{"f1": "d1", "f2": "d2"}}`,
 			},
 			expErr: true,
 		},
@@ -97,7 +97,7 @@ func TestCreateResource(t *testing.T) {
 				}
 			},
 			request: apiv1.CreateResourceRequest{
-				ResourceData: `{"description":"test-desc","public":true,"files":{"f1": "d1", "f2": "d2"}}`,
+				Attributes: `{"description":"test-desc","public":true,"files":{"f1": "d1", "f2": "d2"}}`,
 			},
 			expErr: true,
 		},
@@ -114,7 +114,7 @@ func TestCreateResource(t *testing.T) {
 				}
 			},
 			request: apiv1.CreateResourceRequest{
-				ResourceData: `{"description":"test-desc","public":true,"files":{"f1": "d1", "f2": "d2"}}`,
+				Attributes: `{"description":"test-desc","public":true,"files":{"f1": "d1", "f2": "d2"}}`,
 			},
 			expResponse: &apiv1.CreateResourceResponse{
 				ID: "1234567890",
@@ -220,7 +220,7 @@ func TestReadResource(t *testing.T) {
 				ID: "1234567890",
 			},
 			expResponse: &apiv1.ReadResourceResponse{
-				ResourceData: `{"description":"Hello World","public":false,"files":{"f1.txt":"This is f1","f2.txt":"This is f2"}}`,
+				Attributes: `{"description":"Hello World","public":false,"files":{"f1.txt":"This is f1","f2.txt":"This is f2"}}`,
 			},
 		},
 	}
@@ -340,9 +340,9 @@ func TestUpdateResource(t *testing.T) {
 		"Without id we should fail.": {
 			mock: func(t *testing.T) http.Handler { return nil },
 			request: apiv1.UpdateResourceRequest{
-				ID:                "",
-				ResourceData:      `{}`,
-				ResourceDataState: `{}`,
+				ID:              "",
+				Attributes:      `{}`,
+				AttributesState: `{}`,
 			},
 			expErr: true,
 		},
@@ -350,9 +350,9 @@ func TestUpdateResource(t *testing.T) {
 		"Without valid resource data we should fail.": {
 			mock: func(t *testing.T) http.Handler { return nil },
 			request: apiv1.UpdateResourceRequest{
-				ID:                "1234567890",
-				ResourceData:      `{`,
-				ResourceDataState: `{}`,
+				ID:              "1234567890",
+				Attributes:      `{`,
+				AttributesState: `{}`,
 			},
 			expErr: true,
 		},
@@ -360,9 +360,9 @@ func TestUpdateResource(t *testing.T) {
 		"Without valid state resource data we should fail.": {
 			mock: func(t *testing.T) http.Handler { return nil },
 			request: apiv1.UpdateResourceRequest{
-				ID:                "1234567890",
-				ResourceData:      `{}`,
-				ResourceDataState: `{`,
+				ID:              "1234567890",
+				Attributes:      `{}`,
+				AttributesState: `{`,
 			},
 			expErr: true,
 		},
@@ -370,9 +370,9 @@ func TestUpdateResource(t *testing.T) {
 		"Changing a gist visibility should fail.": {
 			mock: func(t *testing.T) http.Handler { return nil },
 			request: apiv1.UpdateResourceRequest{
-				ID:                "1234567890",
-				ResourceData:      `{"description":"test-desc","public":true,"files":{"f1": "d1", "f2": "d2"}}`,
-				ResourceDataState: `{"description":"test-desc","public":false,"files":{"f1": "d1", "f2": "d2"}}`,
+				ID:              "1234567890",
+				Attributes:      `{"description":"test-desc","public":true,"files":{"f1": "d1", "f2": "d2"}}`,
+				AttributesState: `{"description":"test-desc","public":false,"files":{"f1": "d1", "f2": "d2"}}`,
 			},
 			expErr: true,
 		},
@@ -389,9 +389,9 @@ func TestUpdateResource(t *testing.T) {
 				}
 			},
 			request: apiv1.UpdateResourceRequest{
-				ID:                "1234567890",
-				ResourceData:      `{"description":"test-desc","public":true,"files":{"f1": "d1-mutated", "f2": "d3"}}`,
-				ResourceDataState: `{"description":"test-desc","public":true,"files":{"f1": "d1", "f2": "d2"}}`,
+				ID:              "1234567890",
+				Attributes:      `{"description":"test-desc","public":true,"files":{"f1": "d1-mutated", "f2": "d3"}}`,
+				AttributesState: `{"description":"test-desc","public":true,"files":{"f1": "d1", "f2": "d2"}}`,
 			},
 			expResponse: &apiv1.UpdateResourceResponse{},
 		},
@@ -408,9 +408,9 @@ func TestUpdateResource(t *testing.T) {
 				}
 			},
 			request: apiv1.UpdateResourceRequest{
-				ID:                "1234567890",
-				ResourceData:      `{"description":"test-desc","public":true,"files":{"f1": "d1"}}`,
-				ResourceDataState: `{"description":"test-desc","public":true,"files":{"f1": "d1", "f2": "d2"}}`,
+				ID:              "1234567890",
+				Attributes:      `{"description":"test-desc","public":true,"files":{"f1": "d1"}}`,
+				AttributesState: `{"description":"test-desc","public":true,"files":{"f1": "d1", "f2": "d2"}}`,
 			},
 			expResponse: &apiv1.UpdateResourceResponse{},
 		},

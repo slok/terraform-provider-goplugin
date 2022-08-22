@@ -4,7 +4,7 @@
 resource "goplugin_plugin_v1" "os_file_test" {
   plugin_id = "os_file"
 
-  resource_data = jsonencode({
+  attributes = jsonencode({
     path = "/tmp/hello-world.txt"
     content = "Hello world!"
     mode = 644
