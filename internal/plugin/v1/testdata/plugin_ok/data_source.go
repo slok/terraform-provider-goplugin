@@ -8,6 +8,6 @@ import (
 
 func (p plugin) ReadDataSource(ctx context.Context, r apiv1.ReadDataSourceRequest) (*apiv1.ReadDataSourceResponse, error) {
 	return &apiv1.ReadDataSourceResponse{
-		Result: r.Arguments + "from_data_source",
+		Result: r.Attributes + "from_data_source",
 	}, nil
 }

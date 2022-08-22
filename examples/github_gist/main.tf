@@ -12,7 +12,7 @@ resource "goplugin_plugin_v1" "gist_test" {
   for_each = local.files
 
   plugin_id = "github_gist"
-  resource_data = jsonencode({
+  attributes = jsonencode({
     description = "Managed by terraform."
     public = each.value.public
     files = {

@@ -30,7 +30,7 @@ Check [examples](https://github.com/slok/terraform-provider-goplugin/tree/main/e
 # This plugin gets file information from the sytesm.
 data "goplugin_plugin_v1" "os_file_test" {
   plugin_id = "os_file"
-  arguments = jsonencode({
+  attributes = jsonencode({
     path = "/tmp/hello-world.txt"
   })
 }
@@ -45,7 +45,7 @@ output "test" {
 
 ### Required
 
-- `arguments` (String) A JSON string object with the properties that will be passed to the data source
+- `attributes` (String) A JSON string object with the properties that will be passed to the data source
 							  plugin, the plugin is responsible of knowing how to load and use these properties.
 - `plugin_id` (String) The ID of the data source plugin to use, must be loaded and registered by the provider.
 

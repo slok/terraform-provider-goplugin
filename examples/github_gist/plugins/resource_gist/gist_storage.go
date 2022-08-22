@@ -149,7 +149,7 @@ func (a apiGistManager) GetGist(ctx context.Context, id string) (*Gist, error) {
 
 	gist := Gist{
 		ID: mResp.ID,
-		ResourceData: ResourceData{
+		Attributes: Attributes{
 			Description: mResp.Description,
 			Public:      mResp.Public,
 			Files:       fs,

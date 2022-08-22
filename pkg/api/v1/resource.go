@@ -4,46 +4,59 @@ import (
 	"context"
 )
 
+// CreateResourceRequest is the request that the plugin will receive on resource `Create` operation.
 type CreateResourceRequest struct {
-	// ResourceData is the data the user must provider to handle correctly.
-	ResourceData string
+	// Attributes is the data the Terraform user will provide in the configuration (tf files) to the
+	// plugin to manage the resource.
+	Attributes string
 }
 
+// CreateResourceResponse is the response that the plugin will return after resource `Create` operation.
 type CreateResourceResponse struct {
-	// The ID that tracks this resource.
+	// ID is the ID that tracks this resource.
 	ID string
 }
 
+// ReadResourceRequest is the request that the plugin will receive on resource `Read` operation.
 type ReadResourceRequest struct {
-	// The ID that tracks this resource.
+	// ID is the ID that tracks this resource.
 	ID string
 }
 
+// ReadResourceResponse is the response that the plugin will return after resource `Read` operation.
 type ReadResourceResponse struct {
-	// ResourceData is the data the user must provider to handle correctly.
-	ResourceData string
+	// Attributes is the data the Terraform user will provide in the configuration (tf files) to the
+	// plugin to manage the resource.
+	// On read operation normally this is used to refresh the state and check the attributes provided
+	// by the user match the ones that need to be read, then Terraform will watch for drifts.
+	Attributes string
 }
 
+// UpdateResourceRequest is the request that the plugin will receive on resource `Update` operation.
 type UpdateResourceRequest struct {
-	// ResourceData is the data the user must provider to handle correctly.
+	// ID is the ID that tracks this resource.
 	ID string
-	// ResourceData is the data the user must provider to handle correctly.
-	ResourceData string
-	// ResourceDataState is the same as ResourceData but is the resource data used on the previous
-	// terraform apply execution.
+	// Attributes is the data the Terraform user will provide in the configuration (tf files) to the
+	// plugin to manage the resource.
+	Attributes string
+	// AttributesState is the same as Attributes but instead of being the configuration from the user, are
+	// the attributes used on the previous terraform apply execution.
 	//
-	// This field is not normally used except we want to make decisions based on previous terraform apply
-	// changes. (E.g: A resource data attribute can't be changed after the creation, so if changes we return an error)
-	ResourceDataState string
+	// This field is meant to be used used when we want to make decisions based on previous terraform apply changes.
+	// (E.g: A resource data attribute can't be changed after the creation, so if changes we return an error)
+	AttributesState string
 }
 
+// UpdateResourceResponse is the response that the plugin will return after resource `Update` operation.
 type UpdateResourceResponse struct{}
 
+// DeleteResourceRequest is the request that the plugin will receive on resource `Delete` operation.
 type DeleteResourceRequest struct {
-	// ResourceData is the data the user must provider to handle correctly.
+	// ID is the ID that tracks this resource.
 	ID string
 }
 
+// DeleteResourceResponse is the response that the plugin will return after resource `Delete` operation.
 type DeleteResourceResponse struct{}
 
 // ResourcePlugin knows how to handle a Terraform resource by implementing the common Terraform CRUD operations.
@@ -72,6 +85,8 @@ type ResourcePlugin interface {
 	DeleteResource(ctx context.Context, r DeleteResourceRequest) (*DeleteResourceResponse, error)
 }
 
+// DefaultResourcePluginFactoryName is the default name used by the plugin engine to search for the plugin factory
+// on the plugin source code.
 const DefaultResourcePluginFactoryName = "NewResourcePlugin"
 
 // ResourcePluginFactory is the function type that the plugin engine will load and run to get the plugin that

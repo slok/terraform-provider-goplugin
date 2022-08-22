@@ -30,12 +30,12 @@ func NewResourcePlugin(config string) (apiv1.ResourcePlugin, error) {
 }
 
 func (p plugin) CreateResource(ctx context.Context, r apiv1.CreateResourceRequest) (*apiv1.CreateResourceResponse, error) {
-	rd, err := tfResourceDataToModel(r.ResourceData)
+	rd, err := tfAttributesToModel(r.Attributes)
 	if err != nil {
 		return nil, fmt.Errorf("could not load resource data from Terraform: %w", err)
 	}
 
-	model := Gist{ResourceData: *rd}
+	model := Gist{Attributes: *rd}
 	newModel, err := p.gistManager.CreateGist(ctx, model)
 	if err != nil {
 		return nil, fmt.Errorf("could not create gist: %w", err)
@@ -56,13 +56,13 @@ func (p plugin) ReadResource(ctx context.Context, r apiv1.ReadResourceRequest) (
 		return nil, fmt.Errorf("could not get gist: %w", err)
 	}
 
-	res, err := json.Marshal(model.ResourceData)
+	res, err := json.Marshal(model.Attributes)
 	if err != nil {
 		return nil, fmt.Errorf("could not marshal into JSON: %w", err)
 	}
 
 	return &apiv1.ReadResourceResponse{
-		ResourceData: string(res),
+		Attributes: string(res),
 	}, nil
 }
 
@@ -84,12 +84,12 @@ func (p plugin) UpdateResource(ctx context.Context, r apiv1.UpdateResourceReques
 		return nil, fmt.Errorf("id missing, is required")
 	}
 
-	rdPlan, err := tfResourceDataToModel(r.ResourceData)
+	rdPlan, err := tfAttributesToModel(r.Attributes)
 	if err != nil {
 		return nil, fmt.Errorf("could not load resource data from Terraform Plan: %w", err)
 	}
 
-	rdState, err := tfResourceDataToModel(r.ResourceDataState)
+	rdState, err := tfAttributesToModel(r.AttributesState)
 	if err != nil {
 		return nil, fmt.Errorf("could not load resource data from Terraform State: %w", err)
 	}
@@ -109,8 +109,8 @@ func (p plugin) UpdateResource(ctx context.Context, r apiv1.UpdateResourceReques
 	}
 
 	model := Gist{
-		ID:           r.ID,
-		ResourceData: *rdPlan,
+		ID:         r.ID,
+		Attributes: *rdPlan,
 	}
 	err = p.gistManager.UpdateGist(ctx, model)
 	if err != nil {

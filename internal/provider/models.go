@@ -5,15 +5,15 @@ import (
 )
 
 type ResourcePluginV1 struct {
-	ID           types.String `tfsdk:"id"`
-	ResourceID   types.String `tfsdk:"resource_id"`
-	PluginID     types.String `tfsdk:"plugin_id"`
-	ResourceData types.String `tfsdk:"resource_data"`
+	ID         types.String `tfsdk:"id"`
+	ResourceID types.String `tfsdk:"resource_id"`
+	PluginID   types.String `tfsdk:"plugin_id"`
+	Attributes types.String `tfsdk:"attributes"`
 }
 
 type DataSourcePluginV1 struct {
-	ID        types.String `tfsdk:"id"`
-	PluginID  types.String `tfsdk:"plugin_id"`
-	Arguments types.String `tfsdk:"arguments"`
-	Result    types.String `tfsdk:"result"`
+	ID         types.String `tfsdk:"id"`
+	PluginID   types.String `tfsdk:"plugin_id"`
+	Attributes types.String `tfsdk:"attributes"`
+	Result     types.String `tfsdk:"result"`
 }

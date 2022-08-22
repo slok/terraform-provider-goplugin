@@ -43,7 +43,7 @@ resource "goplugin_plugin_v1" "os_file_test" {
   for_each = local.files
   
   plugin_id = "os_file"
-  resource_data = jsonencode({
+  attributes = jsonencode({
     path = "/tmp/${each.key}"
     content = each.value
     mode = 644
@@ -54,7 +54,7 @@ resource "goplugin_plugin_v1" "github_gist_test" {
   for_each = local.files
   
   plugin_id = "github_gist"
-  resource_data = jsonencode({
+  attributes = jsonencode({
     description = "Managed by terraform."
     public = true
     files = {"${each.key}": each.value}

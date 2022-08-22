@@ -9,7 +9,7 @@ import (
 
 func (p plugin) CreateResource(ctx context.Context, r apiv1.CreateResourceRequest) (*apiv1.CreateResourceResponse, error) {
 	return &apiv1.CreateResourceResponse{
-		ID: r.ResourceData + "_test1",
+		ID: r.Attributes + "_test1",
 	}, nil
 }
 
@@ -23,12 +23,12 @@ func (p plugin) DeleteResource(ctx context.Context, r apiv1.DeleteResourceReques
 
 func (p plugin) ReadResource(ctx context.Context, r apiv1.ReadResourceRequest) (*apiv1.ReadResourceResponse, error) {
 	return &apiv1.ReadResourceResponse{
-		ResourceData: r.ID + "_test1",
+		Attributes: r.ID + "_test1",
 	}, nil
 }
 
 func (p plugin) UpdateResource(ctx context.Context, r apiv1.UpdateResourceRequest) (*apiv1.UpdateResourceResponse, error) {
-	if r.ID != "test1" || r.ResourceData != "This is" || r.ResourceDataState != " a test" {
+	if r.ID != "test1" || r.Attributes != "This is" || r.AttributesState != " a test" {
 		return nil, fmt.Errorf("test failed")
 	}
 

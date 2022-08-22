@@ -11,6 +11,22 @@ provider goplugin {
     "os_file": {
       source_code = {
         data = [for f in fileset("./", "../os_file/plugins/resource_os_file/*"): file(f)]
+        # git = {
+        #   url = "https://github.com/slok/terraform-provider-goplugin"
+        #   paths_regex = ["examples/os_file/plugins/.*\\.go"]
+        # } 
+      }
+      configuration =  jsonencode({})
+    }
+  }
+    data_source_plugins_v1 = {
+    "os_file": {
+      source_code = {
+        data = [for f in fileset("./", "../os_file/plugins/resource_os_file/*"): file(f)]
+        # git = {
+        #   url = "https://github.com/slok/terraform-provider-goplugin"
+        #   paths_regex = ["examples/os_file/plugins/.*\\.go"]
+        # } 
       }
       configuration =  jsonencode({})
     }
@@ -29,7 +45,7 @@ resource "goplugin_plugin_v1" "os_file_test" {
   for_each = local.files
   
   plugin_id = "os_file"
-  resource_data = jsonencode({
+  attributes = jsonencode({
     path = each.key
     content = each.value
     mode = 644

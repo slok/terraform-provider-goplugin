@@ -42,17 +42,17 @@ func TestAccDataSourcePlugingV1(t *testing.T) {
 			config: `
 data "goplugin_plugin_v1" "test" {
   plugin_id = "missing"
-  arguments = jsonencode({})
+  attributes = jsonencode({})
 }
 `,
 			expErr: regexp.MustCompile(`"missing" plugin is not loaded`),
 		},
 
-		"A not json object 'arguments' should fail.": {
+		"A not json object 'attributes' should fail.": {
 			config: `
 data "goplugin_plugin_v1" "test" {
   plugin_id = "fake"
-  arguments = "{"
+  attributes = "{"
 }
 `,
 			expErr: regexp.MustCompile(`Attribute must be JSON object`),
@@ -62,7 +62,7 @@ data "goplugin_plugin_v1" "test" {
 			config: `
 data "goplugin_plugin_v1" "test" {
   plugin_id = "fake"
-  arguments = jsonencode({
+  attributes = jsonencode({
     something = "otherthing"
     test1 = "test2"
   })

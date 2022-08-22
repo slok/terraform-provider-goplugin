@@ -12,18 +12,18 @@ import (
 	apiv1 "github.com/slok/terraform-provider-goplugin/pkg/api/v1"
 )
 
-type ResourceData struct {
+type Attributes struct {
 	Path    string `json:"path"`
 	Content string `json:"content"`
 	Mode    int    `json:"mode"`
 }
 
-func (r ResourceData) validate() error {
-	if r.Path == "" {
+func (a Attributes) validate() error {
+	if a.Path == "" {
 		return fmt.Errorf("path is required")
 	}
 
-	if r.Mode <= 0 {
+	if a.Mode <= 0 {
 		return fmt.Errorf("invalid mode")
 	}
 
@@ -37,29 +37,29 @@ func NewResourcePlugin(config string) (apiv1.ResourcePlugin, error) {
 type plugin struct{}
 
 func (p plugin) CreateResource(ctx context.Context, r apiv1.CreateResourceRequest) (*apiv1.CreateResourceResponse, error) {
-	rd := ResourceData{}
-	err := json.Unmarshal([]byte(r.ResourceData), &rd)
+	atts := Attributes{}
+	err := json.Unmarshal([]byte(r.Attributes), &atts)
 	if err != nil {
 		return nil, fmt.Errorf("could not unmarshal JSON data: %w", err)
 	}
 
-	err = rd.validate()
+	err = atts.validate()
 	if err != nil {
 		return nil, fmt.Errorf("invalid resource data: %w", err)
 	}
 
-	err = os.WriteFile(rd.Path, []byte(rd.Content), 0644)
+	err = os.WriteFile(atts.Path, []byte(atts.Content), 0644)
 	if err != nil {
 		return nil, fmt.Errorf("could not write file: %w", err)
 	}
 
-	err = p.chown(rd.Path, rd.Mode)
+	err = p.chown(atts.Path, atts.Mode)
 	if err != nil {
 		return nil, fmt.Errorf("could not chown file: %w", err)
 	}
 
 	return &apiv1.CreateResourceResponse{
-		ID: rd.Path,
+		ID: atts.Path,
 	}, nil
 }
 
@@ -78,7 +78,7 @@ func (p plugin) ReadResource(ctx context.Context, r apiv1.ReadResourceRequest) (
 	modeS := strconv.FormatInt(int64(info.Mode()), 8)
 	mode, _ := strconv.ParseInt(modeS, 10, 64)
 
-	res, err := json.Marshal(ResourceData{
+	res, err := json.Marshal(Attributes{
 		Path:    r.ID,
 		Content: string(data),
 		Mode:    int(mode),
@@ -88,7 +88,7 @@ func (p plugin) ReadResource(ctx context.Context, r apiv1.ReadResourceRequest) (
 	}
 
 	return &apiv1.ReadResourceResponse{
-		ResourceData: string(res),
+		Attributes: string(res),
 	}, nil
 }
 
@@ -106,18 +106,18 @@ func (p plugin) DeleteResource(ctx context.Context, r apiv1.DeleteResourceReques
 }
 
 func (p plugin) UpdateResource(ctx context.Context, r apiv1.UpdateResourceRequest) (*apiv1.UpdateResourceResponse, error) {
-	rd := ResourceData{}
-	err := json.Unmarshal([]byte(r.ResourceData), &rd)
+	atts := Attributes{}
+	err := json.Unmarshal([]byte(r.Attributes), &atts)
 	if err != nil {
 		return nil, fmt.Errorf("could not unmarshal JSON data: %w", err)
 	}
 
-	err = os.WriteFile(rd.Path, []byte(rd.Content), 0644)
+	err = os.WriteFile(atts.Path, []byte(atts.Content), 0644)
 	if err != nil {
 		return nil, fmt.Errorf("could not write file: %w", err)
 	}
 
-	err = p.chown(rd.Path, rd.Mode)
+	err = p.chown(atts.Path, atts.Mode)
 	if err != nil {
 		return nil, fmt.Errorf("could not chown file: %w", err)
 	}
@@ -166,7 +166,7 @@ func NewDataSourcePlugin(config string) (apiv1.DataSourcePlugin, error) {
 
 func (p plugin) ReadDataSource(ctx context.Context, r apiv1.ReadDataSourceRequest) (*apiv1.ReadDataSourceResponse, error) {
 	args := DataSourceArguments{}
-	err := json.Unmarshal([]byte(r.Arguments), &args)
+	err := json.Unmarshal([]byte(r.Attributes), &args)
 	if err != nil {
 		return nil, fmt.Errorf("could not unmarshal JSON data: %w", err)
 	}

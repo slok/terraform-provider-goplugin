@@ -41,7 +41,7 @@ resource "goplugin_plugin_v1" "os_file_test" {
   for_each = local.files
   
   plugin_id = "os_file"
-  resource_data = jsonencode({
+  attributes = jsonencode({
     path = each.key
     content = each.value
     mode = 644
@@ -52,7 +52,7 @@ data "goplugin_plugin_v1" "os_file_test" {
   for_each = goplugin_plugin_v1.os_file_test
   
   plugin_id = "os_file"
-  arguments = jsonencode({
+  attributes = jsonencode({
     path = each.value.resource_id
   })
 }
