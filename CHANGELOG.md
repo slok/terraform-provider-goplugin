@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [v0.3.0] - 2022-08-23
+
 ## Beaking
 
 - On `plugin_v1` resources, `resource_data` renamed to `attributes`.
@@ -42,7 +44,8 @@
 - Documentation.
 
 
-[unreleased]: https://github.com/slok/terraform-provider-goplugin/compare/v0.2.0...HEAD
+[unreleased]: https://github.com/slok/terraform-provider-goplugin/compare/v0.3.0...HEAD
+[v0.3.0]: https://github.com/slok/terraform-provider-goplugin/compare/v0.2.0...v0.3.0
 [v0.2.0]: https://github.com/slok/terraform-provider-goplugin/compare/v0.1.1...v0.2.0
 [v0.1.1]: https://github.com/slok/terraform-provider-goplugin/compare/v0.1.0...v0.1.1
 [v0.1.0]: https://github.com/slok/terraform-provider-goplugin/releases/tag/v0.1.0
