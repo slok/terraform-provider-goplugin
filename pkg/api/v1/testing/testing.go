@@ -10,6 +10,28 @@ import (
 	apiv1 "github.com/slok/terraform-provider-goplugin/pkg/api/v1"
 )
 
+type TestResourcePluginConfig struct {
+	PluginDir           string
+	PluginFactoryName   string
+	PluginConfiguration string
+}
+
+func (c *TestResourcePluginConfig) defaults() error {
+	if c.PluginDir == "" {
+		c.PluginDir = "./"
+	}
+
+	if c.PluginFactoryName == "" {
+		c.PluginFactoryName = apiv1.DefaultResourcePluginFactoryName
+	}
+
+	if c.PluginConfiguration == "" {
+		c.PluginConfiguration = "{}"
+	}
+
+	return nil
+}
+
 // NewTestResourcePlugin is a helper util to load a plugin using the engine that
 // will use the terraform provider. In the sense of an acceptance/integration test.
 //
@@ -19,17 +41,44 @@ import (
 // detected on the tests instead by running Terraform directly.
 //
 // Note: All plugin files must be at one dir depth level, this is by design on the provider.
-func NewTestResourcePlugin(ctx context.Context, pluginDir string, pluginFactoryName string, configuration string) (apiv1.ResourcePlugin, error) {
-	data, err := loadDirFiles(pluginDir)
+func NewTestResourcePlugin(ctx context.Context, config TestResourcePluginConfig) (apiv1.ResourcePlugin, error) {
+	err := config.defaults()
 	if err != nil {
-		return nil, fmt.Errorf("could not read dir %q files: %w", pluginDir, err)
+		return nil, fmt.Errorf("invalid configuration: %w", err)
+	}
+
+	data, err := loadDirFiles(config.PluginDir)
+	if err != nil {
+		return nil, fmt.Errorf("could not read dir %q files: %w", config.PluginDir, err)
 	}
 
 	return pluginv1.NewEngine().NewResourcePlugin(ctx, pluginv1.PluginConfig{
 		SourceCodeRepository: storage.StaticSourceCodeRepository(data),
-		PluginFactoryName:    pluginFactoryName,
-		PluginOptions:        configuration,
+		PluginFactoryName:    config.PluginFactoryName,
+		PluginOptions:        config.PluginConfiguration,
 	})
+}
+
+type TestDataSourcePluginConfig struct {
+	PluginDir           string
+	PluginFactoryName   string
+	PluginConfiguration string
+}
+
+func (c *TestDataSourcePluginConfig) defaults() error {
+	if c.PluginDir == "" {
+		c.PluginDir = "./"
+	}
+
+	if c.PluginFactoryName == "" {
+		c.PluginFactoryName = apiv1.DefaultDataSourcePluginFactoryName
+	}
+
+	if c.PluginConfiguration == "" {
+		c.PluginConfiguration = "{}"
+	}
+
+	return nil
 }
 
 // NewTestDataSourcePlugin is a helper util to load a plugin using the engine that
@@ -41,16 +90,21 @@ func NewTestResourcePlugin(ctx context.Context, pluginDir string, pluginFactoryN
 // detected on the tests instead by running Terraform directly.
 //
 // Note: All plugin files must be at one dir depth level, this is by design on the provider.
-func NewTestDataSourcePlugin(ctx context.Context, pluginDir string, pluginFactoryName string, configuration string) (apiv1.DataSourcePlugin, error) {
-	data, err := loadDirFiles(pluginDir)
+func NewTestDataSourcePlugin(ctx context.Context, config TestDataSourcePluginConfig) (apiv1.DataSourcePlugin, error) {
+	err := config.defaults()
 	if err != nil {
-		return nil, fmt.Errorf("could not read dir %q files: %w", pluginDir, err)
+		return nil, fmt.Errorf("invalid configuration: %w", err)
+	}
+
+	data, err := loadDirFiles(config.PluginDir)
+	if err != nil {
+		return nil, fmt.Errorf("could not read dir %q files: %w", config.PluginDir, err)
 	}
 
 	return pluginv1.NewEngine().NewDataSourcePlugin(ctx, pluginv1.PluginConfig{
 		SourceCodeRepository: storage.StaticSourceCodeRepository(data),
-		PluginFactoryName:    pluginFactoryName,
-		PluginOptions:        configuration,
+		PluginFactoryName:    config.PluginFactoryName,
+		PluginOptions:        config.PluginConfiguration,
 	})
 }
 

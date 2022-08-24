@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## Breaking
+
+- `NewTestResourcePlugin` now receives a config struct as parameters with and will set safe defaults.
+- `NewTestDataSourcePlugin` now receives a config struct as parameters with and will set safe defaults.
+
 ## Added
 
 - Git authentication using basic auth on plugin's source code.
