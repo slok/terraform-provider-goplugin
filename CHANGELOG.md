@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## Added
+
+- Git authentication using basic auth on plugin's source code.
+
 ## [v0.3.0] - 2022-08-23
 
 ## Beaking

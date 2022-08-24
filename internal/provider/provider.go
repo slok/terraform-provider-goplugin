@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"fmt"
+	"os"
 	"regexp"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -59,6 +60,22 @@ var (
 						Required:    true,
 						Description: `List of regex that will match the files that will be loaded as the plugin source data.`,
 						Type:        types.ListType{ElemType: types.StringType},
+					},
+					"auth": {
+						Optional:    true,
+						Description: `Optional git authentication, if block exists it will enable (and also try loading env vars), if missing all auth will be disabled (not loading env vars).`,
+						Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
+							"username": {
+								Optional:    true,
+								Description: "The username of the basic auth, if not set it will fallback to `GOPLUGIN_GIT_USERNAME` env var (Note: Github PATs don't need username).",
+								Type:        types.StringType,
+							},
+							"password": {
+								Optional:    true,
+								Description: "The password of the basic auth, if not set it will fallback to `GOPLUGIN_GIT_PASSWORD` env var (Note: Github PATs can be used as passwords).",
+								Type:        types.StringType,
+							},
+						}),
 					},
 				}),
 			},
@@ -140,9 +157,14 @@ type providerDataPluginV1Source struct {
 	Git  *providerDataPluginV1SourceGit `tfsdk:"git"`
 }
 type providerDataPluginV1SourceGit struct {
-	URL        types.String   `tfsdk:"url"`
-	Ref        types.String   `tfsdk:"ref"`
-	PathsRegex []types.String `tfsdk:"paths_regex"`
+	URL        types.String                       `tfsdk:"url"`
+	Ref        types.String                       `tfsdk:"ref"`
+	Auth       *providerDataPluginV1SourceGitAuth `tfsdk:"auth"`
+	PathsRegex []types.String                     `tfsdk:"paths_regex"`
+}
+type providerDataPluginV1SourceGitAuth struct {
+	Username types.String `tfsdk:"username"`
+	Password types.String `tfsdk:"password"`
 }
 
 // This is like if it was our main entrypoint.
@@ -273,10 +295,14 @@ func (p *tfProvider) loadAPIV1PluginSourceCode(ctx context.Context, pluginConfig
 			ref = "main"
 		}
 
+		username, password := p.getGithubCredentials(pluginConfig.Git.Auth)
+
 		gitRepo, err := storagegit.NewSourceCodeRepository(storagegit.SourceCodeRepositoryConfig{
 			URL:          pluginConfig.Git.URL.Value,
 			BranchOrTag:  ref,
 			MatchRegexes: rgs,
+			AuthUsername: username,
+			AuthPassword: password,
 		})
 		if err != nil {
 			return nil, fmt.Errorf("could not obtain source code from git repository: %w", err)
@@ -287,4 +313,34 @@ func (p *tfProvider) loadAPIV1PluginSourceCode(ctx context.Context, pluginConfig
 
 	// Invalid source code repo.
 	return nil, fmt.Errorf("plugin source code source missing")
+}
+
+func (p *tfProvider) getGithubCredentials(auth *providerDataPluginV1SourceGitAuth) (username, password string) {
+	// Auth disabled.
+	if auth == nil {
+		return "", ""
+	}
+
+	username = os.Getenv("GOPLUGIN_GIT_USERNAME")
+	password = os.Getenv("GOPLUGIN_GIT_PASSWORD")
+
+	// If we have explicit config, this has priority over env vars.
+	cfgUser := auth.Username.Value
+	if cfgUser != "" {
+		username = cfgUser
+	}
+	cfgPassword := auth.Password.Value
+	if cfgPassword != "" {
+		password = cfgPassword
+	}
+
+	// Helper for github access:
+	//
+	// Github doesn't need the user while using a token, however, an empty user will fail,
+	// so if we have password and an empty username, we set a fake user.
+	if password != "" && username == "" {
+		username = "guybrush-threepwood"
+	}
+
+	return username, password
 }
