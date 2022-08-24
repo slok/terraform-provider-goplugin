@@ -8,13 +8,23 @@ terraform {
 
 // Load all required plugins on the provider.
 provider goplugin { 
+  data_source_plugins_v1 = {
+    "os_file" : {
+      source_code = {
+        data = [for f in fileset("./", "../os_file/plugins/resource_os_file/*"): file(f)]
+      }
+      configuration = jsonencode({})
+    }
+  }
+
   resource_plugins_v1 = {
     "os_file": {
       source_code = {
-        data = [for f in fileset("./", "local_plugins/os_file/*"): file(f)]
+        data = [for f in fileset("./", "../os_file/plugins/resource_os_file/*"): file(f)]
       }
       configuration =  jsonencode({})
     }
+
     "github_gist": {
       source_code = {
         git = {
@@ -60,3 +70,17 @@ resource "goplugin_plugin_v1" "github_gist_test" {
     files = {"${each.key}": each.value}
   })
 }
+
+data "goplugin_plugin_v1" "os_file_test" {
+  for_each = goplugin_plugin_v1.os_file_test
+
+  plugin_id = "os_file"
+  attributes = jsonencode({
+    path = jsondecode(each.value.attributes).path
+  })
+}
+
+output "test" {
+  value = { for k, v in data.goplugin_plugin_v1.os_file_test : k => jsondecode(v.result) }
+}
+

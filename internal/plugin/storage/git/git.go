@@ -10,6 +10,8 @@ import (
 	"github.com/go-git/go-billy/v5/util"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/transport"
+	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/go-git/go-git/v5/storage/memory"
 
 	"github.com/slok/terraform-provider-goplugin/internal/plugin/storage"
@@ -19,6 +21,8 @@ type SourceCodeRepositoryConfig struct {
 	URL          string
 	BranchOrTag  string
 	MatchRegexes []*regexp.Regexp
+	AuthUsername string
+	AuthPassword string
 }
 
 func (c *SourceCodeRepositoryConfig) defaults() error {
@@ -109,10 +113,19 @@ func getRepositoryOnFilesystem(config SourceCodeRepositoryConfig) (billy.Filesys
 		memfs := memfs.New()
 		storer := memory.NewStorage()
 
+		var auth transport.AuthMethod
+		if config.AuthPassword != "" {
+			auth = &http.BasicAuth{
+				Username: config.AuthUsername,
+				Password: config.AuthPassword,
+			}
+		}
+
 		_, err = git.Clone(storer, memfs, &git.CloneOptions{
 			URL:           config.URL,
 			Depth:         1,
 			ReferenceName: ref,
+			Auth:          auth,
 		})
 		if err == nil {
 			// Store in cache.
