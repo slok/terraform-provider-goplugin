@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/go-git/go-billy/v5 v5.3.2-0.20210804024030-7ab80d7c013d
 	github.com/go-git/go-git/v5 v5.4.2
-	github.com/hashicorp/terraform-plugin-framework v0.11.1
+	github.com/hashicorp/terraform-plugin-framework v0.13.0
 	github.com/hashicorp/terraform-plugin-go v0.14.0
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.21.0
 	github.com/stretchr/testify v1.8.0
@@ -23,7 +23,7 @@ require (
 	github.com/fatih/color v1.13.0 // indirect
 	github.com/go-git/gcfg v1.5.0 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
-	github.com/google/go-cmp v0.5.8 // indirect
+	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/hashicorp/errwrap v1.0.0 // indirect
 	github.com/hashicorp/go-checkpoint v0.5.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
