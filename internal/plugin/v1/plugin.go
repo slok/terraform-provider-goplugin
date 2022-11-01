@@ -5,14 +5,11 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"os"
-	"regexp"
-	"sort"
-	"strings"
 	"sync"
-	"testing/fstest"
 
 	"github.com/traefik/yaegi/interp"
 	"github.com/traefik/yaegi/stdlib"
+	"github.com/traefik/yaegi/stdlib/unsafe"
 
 	"github.com/slok/terraform-provider-goplugin/internal/plugin/storage"
 	"github.com/slok/terraform-provider-goplugin/internal/plugin/v1/yaegicustom"
@@ -62,19 +59,8 @@ func (e *Engine) NewResourcePlugin(ctx context.Context, config PluginConfig) (ap
 		return nil, fmt.Errorf("invalid plugin configuration: %w", err)
 	}
 
-	pluginSource, err := config.SourceCodeRepository.GetSourceCode(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("could not get plugin source code: %w", err)
-	}
-
-	// Sanitize plugin source files like validating and ignoring files that should not be loaded.
-	sanitizedPluginSource, err := sanitizedPluginSource(ctx, pluginSource)
-	if err != nil {
-		return nil, fmt.Errorf("invalid plugin source: %w", err)
-	}
-
 	// Get plugin from cache if we already have it.
-	index := pluginIndex(ctx, sanitizedPluginSource, config.PluginOptions, config.PluginFactoryName)
+	index := pluginIndex(ctx, config.SourceCodeRepository, config.PluginOptions, config.PluginFactoryName)
 	p, ok := e.resourcePluginsCache.Load(index)
 	if ok {
 		// Should always be a resource plugin, we control the type internally,
@@ -84,7 +70,7 @@ func (e *Engine) NewResourcePlugin(ctx context.Context, config PluginConfig) (ap
 	}
 
 	// Create Yaegi plugin.
-	pluginFactory, err := loadRawResourcePluginFactory(ctx, config.PluginFactoryName, sanitizedPluginSource)
+	pluginFactory, err := loadRawResourcePluginFactory(ctx, config.SourceCodeRepository, config.PluginFactoryName)
 	if err != nil {
 		return nil, fmt.Errorf("could not load plugin: %w", err)
 	}
@@ -106,19 +92,8 @@ func (e *Engine) NewDataSourcePlugin(ctx context.Context, config PluginConfig) (
 		return nil, fmt.Errorf("invalid plugin configuration: %w", err)
 	}
 
-	pluginSource, err := config.SourceCodeRepository.GetSourceCode(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("could not get plugin source code: %w", err)
-	}
-
-	// Sanitize plugin source files like validating and ignoring files that should not be loaded.
-	sanitizedPluginSource, err := sanitizedPluginSource(ctx, pluginSource)
-	if err != nil {
-		return nil, fmt.Errorf("invalid plugin source: %w", err)
-	}
-
 	// Get plugin from cache if we already have it.
-	index := pluginIndex(ctx, sanitizedPluginSource, config.PluginOptions, config.PluginFactoryName)
+	index := pluginIndex(ctx, config.SourceCodeRepository, config.PluginOptions, config.PluginFactoryName)
 	p, ok := e.dataSourcePluginsCache.Load(index)
 	if ok {
 		// Should always be a data source plugin, we control the type internally,
@@ -128,7 +103,7 @@ func (e *Engine) NewDataSourcePlugin(ctx context.Context, config PluginConfig) (
 	}
 
 	// Create Yaegi plugin.
-	pluginFactory, err := loadRawDataSourcePluginFactory(ctx, config.PluginFactoryName, sanitizedPluginSource)
+	pluginFactory, err := loadRawDataSourcePluginFactory(ctx, config.SourceCodeRepository, config.PluginFactoryName)
 	if err != nil {
 		return nil, fmt.Errorf("could not load plugin: %w", err)
 	}
@@ -144,36 +119,8 @@ func (e *Engine) NewDataSourcePlugin(ctx context.Context, config PluginConfig) (
 	return plugin, nil
 }
 
-var packageRegexp = regexp.MustCompile(`(?m)^package +([^\s]+) *$`)
-
-func sanitizedPluginSource(ctx context.Context, pluginSource []string) ([]string, error) {
-	newSrc := []string{}
-	for _, src := range pluginSource {
-		// Discover package name.
-		packageMatch := packageRegexp.FindStringSubmatch(src)
-		if len(packageMatch) != 2 {
-			return nil, fmt.Errorf("invalid plugin source code, could not get package name")
-		}
-		pkg := packageMatch[1]
-
-		// Ignore test package files so we simplify plugin loading with two different
-		//packages (and don't make yaegi fail).
-		if strings.HasSuffix(pkg, "_test") {
-			continue
-		}
-
-		newSrc = append(newSrc, src)
-	}
-
-	return newSrc, nil
-}
-
-func pluginIndex(ctx context.Context, pluginSource []string, pluginOptions string, factoryName string) string {
-	// Wrap all the plugin information as a single string bundle.
-	sort.Strings(pluginSource)
-	bundle := strings.Join(pluginSource, "") + pluginOptions + factoryName
-
-	// Get plugin bundle SHA.
+func pluginIndex(ctx context.Context, repo storage.SourceCodeRepository, pluginOptions string, factoryName string) string {
+	bundle := repo.Index(ctx) + pluginOptions + factoryName
 	sha := sha256.Sum256([]byte(bundle))
 
 	return fmt.Sprintf("%x", sha)
@@ -181,24 +128,20 @@ func pluginIndex(ctx context.Context, pluginSource []string, pluginOptions strin
 
 const pluginMemFSDir = "plugin"
 
-func loadRawResourcePluginFactory(ctx context.Context, pluginFactoryName string, srcs []string) (apiv1.ResourcePluginFactory, error) {
-	yaegiInterp, err := newPluginYaegiInterpreter(ctx, srcs, pluginMemFSDir)
+func loadRawResourcePluginFactory(ctx context.Context, repo storage.SourceCodeRepository, pluginFactoryName string) (apiv1.ResourcePluginFactory, error) {
+	yaegiInterp, err := newPluginYaegiInterpreter(ctx, repo, pluginMemFSDir)
 	if err != nil {
 		return nil, fmt.Errorf("could not create Yaegi interpreter: %w", err)
 	}
 
-	// Get plugin logic by
-	// - Importing the memfs local dir package.
-	// - Getting the plugin factory name convention.
-	// - Type assert to our factory type convention.
-	pluginImportStatement := fmt.Sprintf(`import plugin "./%s"`, pluginMemFSDir)
-	_, err = yaegiInterp.EvalWithContext(ctx, pluginImportStatement)
+	importStatement := fmt.Sprintf(`import plugin "%s"`, repo.ImportPath(ctx))
+	_, err = yaegiInterp.EvalWithContext(ctx, importStatement)
 	if err != nil {
-		return nil, fmt.Errorf("could not import plugin package: %w", err)
+		return nil, fmt.Errorf("could not get plugin: %w", err)
 	}
 
-	srcPluginIdentifier := fmt.Sprintf("plugin.%s", pluginFactoryName)
-	pluginFuncTmp, err := yaegiInterp.EvalWithContext(ctx, srcPluginIdentifier)
+	// Get plugin logic.
+	pluginFuncTmp, err := yaegiInterp.EvalWithContext(ctx, "plugin."+pluginFactoryName)
 	if err != nil {
 		return nil, fmt.Errorf("could not get plugin: %w", err)
 	}
@@ -211,24 +154,20 @@ func loadRawResourcePluginFactory(ctx context.Context, pluginFactoryName string,
 	return pluginFunc, nil
 }
 
-func loadRawDataSourcePluginFactory(ctx context.Context, pluginFactoryName string, srcs []string) (apiv1.DataSourcePluginFactory, error) {
-	yaegiInterp, err := newPluginYaegiInterpreter(ctx, srcs, pluginMemFSDir)
+func loadRawDataSourcePluginFactory(ctx context.Context, repo storage.SourceCodeRepository, pluginFactoryName string) (apiv1.DataSourcePluginFactory, error) {
+	yaegiInterp, err := newPluginYaegiInterpreter(ctx, repo, pluginMemFSDir)
 	if err != nil {
 		return nil, fmt.Errorf("could not create Yaegi interpreter: %w", err)
 	}
 
-	// Get plugin logic by
-	// - Importing the memfs local dir package.
-	// - Getting the plugin factory name convention.
-	// - Type assert to our factory type convention.
-	pluginImportStatement := fmt.Sprintf(`import plugin "./%s"`, pluginMemFSDir)
-	_, err = yaegiInterp.EvalWithContext(ctx, pluginImportStatement)
+	importStatement := fmt.Sprintf(`import plugin "%s"`, repo.ImportPath(ctx))
+	_, err = yaegiInterp.EvalWithContext(ctx, importStatement)
 	if err != nil {
-		return nil, fmt.Errorf("could not import plugin package: %w", err)
+		return nil, fmt.Errorf("could not get plugin: %w", err)
 	}
 
-	srcPluginIdentifier := fmt.Sprintf("plugin.%s", pluginFactoryName)
-	pluginFuncTmp, err := yaegiInterp.EvalWithContext(ctx, srcPluginIdentifier)
+	// Get plugin logic.
+	pluginFuncTmp, err := yaegiInterp.EvalWithContext(ctx, "plugin."+pluginFactoryName)
 	if err != nil {
 		return nil, fmt.Errorf("could not get plugin: %w", err)
 	}
@@ -245,29 +184,24 @@ func loadRawDataSourcePluginFactory(ctx context.Context, pluginFactoryName strin
 // - Create a new Yaegi interpreter.
 // - Setup a memory based FS with the plugin source code loaded in the specified plugin dir.
 // - Add the required libraries available (standard library and our own library).
-func newPluginYaegiInterpreter(ctx context.Context, srcs []string, pluginDir string) (*interp.Interpreter, error) {
-	if pluginDir == "" {
-		return nil, fmt.Errorf("plugin directory to set the go plugin on the FS is required")
-	}
-
-	// Create our plugin memory FS with the plugin sources in a plugin dir.
-	mapFS := map[string]*fstest.MapFile{}
-	for i, src := range srcs {
-		fileName := fmt.Sprintf("%s/%d.go", pluginDir, i)
-
-		mapFS[fileName] = &fstest.MapFile{Data: []byte(src)}
-	}
-
+func newPluginYaegiInterpreter(ctx context.Context, repo storage.SourceCodeRepository, pluginDir string) (*interp.Interpreter, error) {
 	// Create interpreter
 	i := interp.New(interp.Options{
-		SourcecodeFilesystem: fstest.MapFS(mapFS),
+		SourcecodeFilesystem: repo.FS(ctx),
 		Env:                  os.Environ(),
+		GoPath:               repo.Gopath(ctx),
 	})
 
 	// Add standard library.
 	err := i.Use(stdlib.Symbols)
 	if err != nil {
 		return nil, fmt.Errorf("yaegi could not use stdlib symbols: %w", err)
+	}
+
+	// Add unsafe library.
+	err = i.Use(unsafe.Symbols)
+	if err != nil {
+		return nil, fmt.Errorf("yaegi could not use stdlib unsafe symbols: %w", err)
 	}
 
 	// Add our own plugin library.

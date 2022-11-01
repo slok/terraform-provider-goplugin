@@ -1,14 +1,13 @@
 package storage
 
-import "context"
+import (
+	"context"
+	"io/fs"
+)
 
 type SourceCodeRepository interface {
-	GetSourceCode(ctx context.Context) ([]string, error)
-}
-
-// StaticSourceCodeRepository will be used to make a []string behave like a source code repository.
-type StaticSourceCodeRepository []string
-
-func (s StaticSourceCodeRepository) GetSourceCode(ctx context.Context) ([]string, error) {
-	return s, nil
+	FS(ctx context.Context) fs.FS
+	Index(ctx context.Context) string
+	Gopath(ctx context.Context) string
+	ImportPath(ctx context.Context) string
 }

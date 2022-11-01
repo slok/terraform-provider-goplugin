@@ -25,7 +25,7 @@ provider goplugin {
   resource_plugins_v1 = {
     "test_file": {
       source_code = {
-		data = [file("testdata/file_plugin/plugin.go")]
+		dir = "testdata/file_plugin"
 	  }
       configuration =  jsonencode({})
     }

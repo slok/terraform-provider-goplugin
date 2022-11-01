@@ -21,7 +21,7 @@ provider goplugin {
   data_source_plugins_v1 = {
     "fake": {
       source_code = {
-		data = [file("testdata/fake_data_source/plugin.go")]
+		dir = "testdata/fake_data_source"
 	  }
       configuration =  jsonencode({})
     }

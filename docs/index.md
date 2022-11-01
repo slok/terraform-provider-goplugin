@@ -3,14 +3,14 @@
 page_title: "goplugin Provider"
 subcategory: ""
 description: |-
-  A Terraform provider to create terraform providers 🤯, but easier and faster!
+  A Terraform provider to create terraform providers, but easier and faster!
   Terraform go plugin provider is a Terraform provider that will let you execute Go plugins (using yaegi https://github.com/traefik/yaegi) in terraform by implementing a very simple and small Go API.
   Check all full documentation on the repository readme https://github.com/slok/terraform-provider-goplugin.Check the examples https://github.com/slok/terraform-provider-goplugin/tree/main/examples to see how to develop your own plugins.Check Go v1 lib https://pkg.go.dev/github.com/slok/terraform-provider-goplugin/pkg/api/v1.
 ---
 
 # goplugin Provider
 
-A Terraform provider to create terraform providers 🤯, but easier and faster!
+A Terraform provider to create terraform providers, but easier and faster!
 
 Terraform go plugin provider is a Terraform provider that will let you execute Go plugins (using [yaegi](https://github.com/traefik/yaegi)) in terraform by implementing a very simple and small Go API.
 
@@ -133,7 +133,7 @@ Optional:
 
 Optional:
 
-- `data` (List of String) Raw content data of the plugins.
+- `dir` (String) Directory where the plugin go module root is. It will load all files including vendor directory, factories must be at the module root level, however it can have subpacakges.
 - `git` (Attributes) Git repository to get the plugin source data from. (see [below for nested schema](#nestedatt--data_source_plugins_v1--source_code--git))
 
 <a id="nestedatt--data_source_plugins_v1--source_code--git"></a>
@@ -141,12 +141,12 @@ Optional:
 
 Required:
 
-- `paths_regex` (List of String) List of regex that will match the files that will be loaded as the plugin source data.
 - `url` (String) URL of the repository.
 
 Optional:
 
 - `auth` (Attributes) Optional git authentication, if block exists it will enable (and also try loading env vars), if missing all auth will be disabled (not loading env vars). (see [below for nested schema](#nestedatt--data_source_plugins_v1--source_code--git--auth))
+- `dir` (String) Absolute directory from the root where the plugin go module is in the repository. It works the same way the `dir` source code does, supports subpackages, vendor dir...
 - `ref` (String) Reference of the the repository, only Branch and tags are supported.
 
 <a id="nestedatt--data_source_plugins_v1--source_code--git--auth"></a>
@@ -178,7 +178,7 @@ Optional:
 
 Optional:
 
-- `data` (List of String) Raw content data of the plugins.
+- `dir` (String) Directory where the plugin go module root is. It will load all files including vendor directory, factories must be at the module root level, however it can have subpacakges.
 - `git` (Attributes) Git repository to get the plugin source data from. (see [below for nested schema](#nestedatt--resource_plugins_v1--source_code--git))
 
 <a id="nestedatt--resource_plugins_v1--source_code--git"></a>
@@ -186,12 +186,12 @@ Optional:
 
 Required:
 
-- `paths_regex` (List of String) List of regex that will match the files that will be loaded as the plugin source data.
 - `url` (String) URL of the repository.
 
 Optional:
 
 - `auth` (Attributes) Optional git authentication, if block exists it will enable (and also try loading env vars), if missing all auth will be disabled (not loading env vars). (see [below for nested schema](#nestedatt--resource_plugins_v1--source_code--git--auth))
+- `dir` (String) Absolute directory from the root where the plugin go module is in the repository. It works the same way the `dir` source code does, supports subpackages, vendor dir...
 - `ref` (String) Reference of the the repository, only Branch and tags are supported.
 
 <a id="nestedatt--resource_plugins_v1--source_code--git--auth"></a>
