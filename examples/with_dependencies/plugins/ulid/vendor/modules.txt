@@ -1,0 +1,6 @@
+# github.com/oklog/ulid/v2 v2.1.0
+## explicit; go 1.15
+github.com/oklog/ulid/v2
+# github.com/slok/terraform-provider-goplugin v0.4.0
+## explicit; go 1.19
+github.com/slok/terraform-provider-goplugin/pkg/api/v1
