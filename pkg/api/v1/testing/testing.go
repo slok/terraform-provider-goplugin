@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/slok/terraform-provider-goplugin/internal/plugin/storage"
+	"github.com/slok/terraform-provider-goplugin/internal/plugin/storage/moduledir"
 	pluginv1 "github.com/slok/terraform-provider-goplugin/internal/plugin/v1"
 	apiv1 "github.com/slok/terraform-provider-goplugin/pkg/api/v1"
 )
@@ -47,13 +47,13 @@ func NewTestResourcePlugin(ctx context.Context, config TestResourcePluginConfig)
 		return nil, fmt.Errorf("invalid configuration: %w", err)
 	}
 
-	data, err := loadDirFiles(config.PluginDir)
+	repo, err := moduledir.NewSourceCodeRepository(os.DirFS(config.PluginDir))
 	if err != nil {
-		return nil, fmt.Errorf("could not read dir %q files: %w", config.PluginDir, err)
+		return nil, fmt.Errorf("could not create source code repo: %w", err)
 	}
 
 	return pluginv1.NewEngine().NewResourcePlugin(ctx, pluginv1.PluginConfig{
-		SourceCodeRepository: storage.StaticSourceCodeRepository(data),
+		SourceCodeRepository: repo,
 		PluginFactoryName:    config.PluginFactoryName,
 		PluginOptions:        config.PluginConfiguration,
 	})
@@ -96,33 +96,14 @@ func NewTestDataSourcePlugin(ctx context.Context, config TestDataSourcePluginCon
 		return nil, fmt.Errorf("invalid configuration: %w", err)
 	}
 
-	data, err := loadDirFiles(config.PluginDir)
+	repo, err := moduledir.NewSourceCodeRepository(os.DirFS(config.PluginDir))
 	if err != nil {
-		return nil, fmt.Errorf("could not read dir %q files: %w", config.PluginDir, err)
+		return nil, fmt.Errorf("could not create source code repo: %w", err)
 	}
 
 	return pluginv1.NewEngine().NewDataSourcePlugin(ctx, pluginv1.PluginConfig{
-		SourceCodeRepository: storage.StaticSourceCodeRepository(data),
+		SourceCodeRepository: repo,
 		PluginFactoryName:    config.PluginFactoryName,
 		PluginOptions:        config.PluginConfiguration,
 	})
-}
-
-func loadDirFiles(dir string) ([]string, error) {
-	// Load plugin source from the file system.
-	files, err := os.ReadDir(dir)
-	if err != nil {
-		return nil, fmt.Errorf("could not read directory files: %w", err)
-	}
-
-	data := []string{}
-	for _, file := range files {
-		d, err := os.ReadFile(file.Name())
-		if err != nil {
-			return nil, fmt.Errorf("could not read %q file: %w", file.Name(), err)
-		}
-		data = append(data, string(d))
-	}
-
-	return data, nil
 }

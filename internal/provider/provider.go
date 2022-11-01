@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"regexp"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
@@ -13,6 +12,7 @@ import (
 
 	"github.com/slok/terraform-provider-goplugin/internal/plugin/storage"
 	storagegit "github.com/slok/terraform-provider-goplugin/internal/plugin/storage/git"
+	"github.com/slok/terraform-provider-goplugin/internal/plugin/storage/moduledir"
 	pluginv1 "github.com/slok/terraform-provider-goplugin/internal/plugin/v1"
 	"github.com/slok/terraform-provider-goplugin/internal/provider/attributeutils"
 	apiv1 "github.com/slok/terraform-provider-goplugin/pkg/api/v1"
@@ -34,10 +34,10 @@ var (
 		Required:    true,
 		Description: `Configuration regarding where the plugin code will be loaded from. Only one must be used of all the methods available`,
 		Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
-			"data": {
+			"dir": {
 				Optional:    true,
-				Description: `Raw content data of the plugins.`,
-				Type:        types.ListType{ElemType: types.StringType},
+				Description: `Directory where the plugin go module root is. It will load all files including vendor directory, factories must be at the module root level, however it can have subpacakges.`,
+				Type:        types.StringType,
 			},
 			"git": {
 				Optional:    true,
@@ -56,10 +56,10 @@ var (
 						// TODO(slok): Provider config doesn't support plan modifiers, set default on `Configure` until are supported.
 						// PlanModifiers: tfsdk.AttributePlanModifiers{attributeutils.DefaultValue(types.String{Value: "main"})},
 					},
-					"paths_regex": {
-						Required:    true,
-						Description: `List of regex that will match the files that will be loaded as the plugin source data.`,
-						Type:        types.ListType{ElemType: types.StringType},
+					"dir": {
+						Optional:    true,
+						Description: "Absolute directory from the root where the plugin go module is in the repository. It works the same way the `dir` source code does, supports subpackages, vendor dir...",
+						Type:        types.StringType,
 					},
 					"auth": {
 						Optional:    true,
@@ -95,7 +95,7 @@ var (
 func (p *tfProvider) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Description: `
-A Terraform provider to create terraform providers 🤯, but easier and faster!
+A Terraform provider to create terraform providers, but easier and faster!
 
 Terraform go plugin provider is a Terraform provider that will let you execute Go plugins (using [yaegi](https://github.com/traefik/yaegi)) in terraform by implementing a very simple and small Go API.
 
@@ -153,14 +153,14 @@ type providerDataPluginV1 struct {
 }
 
 type providerDataPluginV1Source struct {
-	Data []types.String                 `tfsdk:"data"`
-	Git  *providerDataPluginV1SourceGit `tfsdk:"git"`
+	Dir types.String                   `tfsdk:"dir"`
+	Git *providerDataPluginV1SourceGit `tfsdk:"git"`
 }
 type providerDataPluginV1SourceGit struct {
-	URL        types.String                       `tfsdk:"url"`
-	Ref        types.String                       `tfsdk:"ref"`
-	Auth       *providerDataPluginV1SourceGitAuth `tfsdk:"auth"`
-	PathsRegex []types.String                     `tfsdk:"paths_regex"`
+	URL  types.String                       `tfsdk:"url"`
+	Ref  types.String                       `tfsdk:"ref"`
+	Auth *providerDataPluginV1SourceGitAuth `tfsdk:"auth"`
+	Dir  types.String                       `tfsdk:"dir"`
 }
 type providerDataPluginV1SourceGitAuth struct {
 	Username types.String `tfsdk:"username"`
@@ -269,26 +269,13 @@ func (p *tfProvider) loadAPIV1DataSourcePlugin(ctx context.Context, pluginFactor
 func (p *tfProvider) loadAPIV1PluginSourceCode(ctx context.Context, pluginConfig providerDataPluginV1Source) (storage.SourceCodeRepository, error) {
 	// Select the source repo based on the configuration.
 	switch {
-	// Source code from raw data.
-	case len(pluginConfig.Data) > 0:
-		src := []string{}
-		for _, s := range pluginConfig.Data {
-			src = append(src, s.Value)
-		}
-		return storage.StaticSourceCodeRepository(src), nil
+	// Source code from fs dir.
+	case pluginConfig.Dir.Value != "":
+		realFS := os.DirFS(pluginConfig.Dir.Value)
+		return moduledir.NewSourceCodeRepository(realFS)
 
 	// Source code from Git repository
 	case pluginConfig.Git != nil:
-		rgs := []*regexp.Regexp{}
-		for _, rg := range pluginConfig.Git.PathsRegex {
-			r, err := regexp.Compile(rg.Value)
-			if err != nil {
-				return nil, fmt.Errorf("could not compile %q regex: %w", rg, err)
-			}
-
-			rgs = append(rgs, r)
-		}
-
 		// TODO(slok): Remove when plan modifiers are supported on provider configuration attributes.
 		ref := pluginConfig.Git.Ref.Value
 		if ref == "" {
@@ -300,7 +287,7 @@ func (p *tfProvider) loadAPIV1PluginSourceCode(ctx context.Context, pluginConfig
 		gitRepo, err := storagegit.NewSourceCodeRepository(storagegit.SourceCodeRepositoryConfig{
 			URL:          pluginConfig.Git.URL.Value,
 			BranchOrTag:  ref,
-			MatchRegexes: rgs,
+			Dir:          pluginConfig.Git.Dir.Value,
 			AuthUsername: username,
 			AuthPassword: password,
 		})

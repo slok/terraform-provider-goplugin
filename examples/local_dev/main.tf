@@ -6,48 +6,96 @@ terraform {
   }
 }
 
-provider goplugin { 
+provider "goplugin" {
   resource_plugins_v1 = {
-    "os_file": {
+    "os_file" : {
+      factory_name = "NewFileResourcePlugin"
       source_code = {
-        data = [for f in fileset("./", "../os_file/plugins/resource_os_file/*"): file(f)]
-        # git = {
-        #   url = "https://github.com/slok/terraform-provider-goplugin"
-        #   paths_regex = ["examples/os_file/plugins/.*\\.go"]
-        # } 
+        git = {
+          url  = "https://github.com/slok/terraform-go-plugins"
+          auth = {} // Load `GOPLUGIN_GIT_PASSWORD`.
+        }
       }
-      configuration =  jsonencode({})
+      configuration = jsonencode({})
     }
   }
-    data_source_plugins_v1 = {
-    "os_file": {
+  data_source_plugins_v1 = {
+    "os_file" : {
       source_code = {
-        data = [for f in fileset("./", "../os_file/plugins/resource_os_file/*"): file(f)]
-        # git = {
-        #   url = "https://github.com/slok/terraform-provider-goplugin"
-        #   paths_regex = ["examples/os_file/plugins/.*\\.go"]
-        # } 
+        dir = "../os_file/plugins/resource_os_file/"
       }
-      configuration =  jsonencode({})
+      configuration = jsonencode({})
+    },
+
+    "murmur3" : {
+      source_code = {
+        dir = "../with_dependencies/plugins/murmur3"
+      }
+      configuration = jsonencode({})
+    }
+
+    "ulid" : {
+      source_code = {
+        dir = "../with_dependencies/plugins/ulid"
+      }
+      configuration = jsonencode({})
     }
   }
 }
 
 locals {
-    files = {
-        "/tmp/tf-local-dev1.txt": "test-1"
-        "/tmp/tf-local-dev2.txt": "test-2"
-        "/tmp/tf-local-dev3.txt": "test-3"
-    }
+  files = {
+    "/tmp/tf-local-dev1.txt" : "test-1"
+    "/tmp/tf-local-dev2.txt" : "test-2"
+    "/tmp/tf-local-dev3.txt" : "test-3"
+  }
 }
 
 resource "goplugin_plugin_v1" "os_file_test" {
   for_each = local.files
-  
+
   plugin_id = "os_file"
   attributes = jsonencode({
-    path = each.key
+    path    = each.key
     content = each.value
-    mode = 644
+    mode    = 644
   })
 }
+
+data "goplugin_plugin_v1" "os_file_test" {
+  for_each = goplugin_plugin_v1.os_file_test
+
+  plugin_id = "os_file"
+  attributes = jsonencode({
+    path = jsondecode(each.value.attributes).path
+  })
+}
+
+output "test" {
+  value = { for k, v in data.goplugin_plugin_v1.os_file_test : k => jsondecode(v.result) }
+}
+
+
+data "goplugin_plugin_v1" "murmur_test" {
+  plugin_id = "murmur3"
+  attributes = jsonencode({
+    value = "testing the hashes"
+  })
+}
+
+output "test_murmur" {
+  value = jsondecode(data.goplugin_plugin_v1.murmur_test.result)
+}
+
+
+data "goplugin_plugin_v1" "ulid_test" {
+  plugin_id = "ulid"
+  attributes = jsonencode({
+    value = "testing the hashes"
+  })
+}
+
+output "test_ulid" {
+  value = jsondecode(data.goplugin_plugin_v1.ulid_test.result)
+}
+

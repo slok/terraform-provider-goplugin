@@ -3,7 +3,8 @@ package git
 import (
 	"fmt"
 	"io/fs"
-	"regexp"
+	"path"
+	"testing/fstest"
 
 	"github.com/go-git/go-billy/v5"
 	"github.com/go-git/go-billy/v5/memfs"
@@ -15,12 +16,13 @@ import (
 	"github.com/go-git/go-git/v5/storage/memory"
 
 	"github.com/slok/terraform-provider-goplugin/internal/plugin/storage"
+	"github.com/slok/terraform-provider-goplugin/internal/plugin/storage/moduledir"
 )
 
 type SourceCodeRepositoryConfig struct {
 	URL          string
 	BranchOrTag  string
-	MatchRegexes []*regexp.Regexp
+	Dir          string
 	AuthUsername string
 	AuthPassword string
 }
@@ -32,6 +34,14 @@ func (c *SourceCodeRepositoryConfig) defaults() error {
 
 	if c.BranchOrTag == "" {
 		return fmt.Errorf("ref is required")
+	}
+
+	if c.Dir == "" {
+		c.Dir = "/"
+	}
+
+	if !path.IsAbs(c.Dir) {
+		return fmt.Errorf("repo dir should be absolute from the repo root")
 	}
 
 	return nil
@@ -49,23 +59,25 @@ func NewSourceCodeRepository(config SourceCodeRepositoryConfig) (storage.SourceC
 		return nil, fmt.Errorf("could not get repo file system: %w", err)
 	}
 
-	files := []string{}
-	err = util.Walk(repoFS, "/", func(path string, info fs.FileInfo, err error) error {
+	mapFS := map[string]*fstest.MapFile{}
+	err = util.Walk(repoFS, config.Dir, func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 
-		// Skip if directory or doesn't match with expected file.
-		if info.IsDir() || !match(path, config.MatchRegexes) {
+		if info.IsDir() {
 			return nil
 		}
+
+		relPath := path[1:]
 
 		// Append data file.
 		data, err := util.ReadFile(repoFS, path)
 		if err != nil {
 			return fmt.Errorf("could not read git file: %w", err)
 		}
-		files = append(files, string(data))
+
+		mapFS[relPath] = &fstest.MapFile{Data: data}
 
 		return nil
 	})
@@ -73,17 +85,7 @@ func NewSourceCodeRepository(config SourceCodeRepositoryConfig) (storage.SourceC
 		return nil, fmt.Errorf("could not walk git repository: %w", err)
 	}
 
-	return storage.StaticSourceCodeRepository(files), nil
-}
-
-func match(path string, rs []*regexp.Regexp) bool {
-	for _, r := range rs {
-		if r.MatchString(path) {
-			return true
-		}
-	}
-
-	return false
+	return moduledir.NewSourceCodeRepository(fstest.MapFS(mapFS))
 }
 
 // pluginFsCache will have all the cloned repos in the reference that was obtained

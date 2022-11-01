@@ -179,6 +179,7 @@ rm -rf ./.terraform ./.terraform.lock.hcl
 cd -
 make install
 cd -
+terraform init
 terraform plan
 ```
 

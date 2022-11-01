@@ -1,0 +1,6 @@
+# github.com/slok/terraform-provider-goplugin v0.4.0
+## explicit; go 1.19
+github.com/slok/terraform-provider-goplugin/pkg/api/v1
+# github.com/spaolacci/murmur3 v1.1.0
+## explicit
+github.com/spaolacci/murmur3
