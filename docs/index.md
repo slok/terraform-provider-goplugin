@@ -118,7 +118,9 @@ output "test" {
 Required:
 
 - `configuration` (String, Sensitive) A JSON string object with the properties that will be passed to the plugin creation/initialization, the plugin is responsible of knowing how to load and use these properties (e.g: API tokens).
-- `source_code` (Attributes) Configuration regarding where the plugin code will be loaded from. Only one must be used of all the methods available (see [below for nested schema](#nestedatt--data_source_plugins_v1--source_code))
+- `source_code` (Attributes) Configuration regarding where the plugin code will be loaded from.
+		The plugin must be a valid go module (`go.mod`) and be available in the root this module.
+		Only one of the source code retrieval methods must be used. (see [below for nested schema](#nestedatt--data_source_plugins_v1--source_code))
 
 Optional:
 
@@ -163,7 +165,9 @@ Optional:
 Required:
 
 - `configuration` (String, Sensitive) A JSON string object with the properties that will be passed to the plugin creation/initialization, the plugin is responsible of knowing how to load and use these properties (e.g: API tokens).
-- `source_code` (Attributes) Configuration regarding where the plugin code will be loaded from. Only one must be used of all the methods available (see [below for nested schema](#nestedatt--resource_plugins_v1--source_code))
+- `source_code` (Attributes) Configuration regarding where the plugin code will be loaded from.
+		The plugin must be a valid go module (`go.mod`) and be available in the root this module.
+		Only one of the source code retrieval methods must be used. (see [below for nested schema](#nestedatt--resource_plugins_v1--source_code))
 
 Optional:
 

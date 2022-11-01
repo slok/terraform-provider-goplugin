@@ -31,8 +31,10 @@ type tfProvider struct {
 
 var (
 	pluginSourceCodeAttribute = tfsdk.Attribute{
-		Required:    true,
-		Description: `Configuration regarding where the plugin code will be loaded from. Only one must be used of all the methods available`,
+		Required: true,
+		Description: `Configuration regarding where the plugin code will be loaded from.
+		The plugin must be a valid go module ` + "(`go.mod`)" + ` and be available in the root this module.
+		Only one of the source code retrieval methods must be used.`,
 		Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
 			"dir": {
 				Optional:    true,
