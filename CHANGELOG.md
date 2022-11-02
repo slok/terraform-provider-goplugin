@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [v0.5.0] - 2022-11-02
+
 ## Breaking
 
 - File based plugins have been removed in favor of go modules.
@@ -63,7 +65,8 @@
 - Github gist example.
 - Documentation.
 
-[unreleased]: https://github.com/slok/terraform-provider-goplugin/compare/v0.4.0...HEAD
+[unreleased]: https://github.com/slok/terraform-provider-goplugin/compare/v0.5.0...HEAD
+[v0.5.0]: https://github.com/slok/terraform-provider-goplugin/compare/v0.4.0...v0.5.0
 [v0.4.0]: https://github.com/slok/terraform-provider-goplugin/compare/v0.3.0...v0.4.0
 [v0.3.0]: https://github.com/slok/terraform-provider-goplugin/compare/v0.2.0...v0.3.0
 [v0.2.0]: https://github.com/slok/terraform-provider-goplugin/compare/v0.1.1...v0.2.0
