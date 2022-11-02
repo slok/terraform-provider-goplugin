@@ -23,14 +23,14 @@ func (s suppressEquivalentJSON) MarkdownDescription(ctx context.Context) string 
 }
 
 func (s suppressEquivalentJSON) Modify(ctx context.Context, req tfsdk.ModifyAttributePlanRequest, resp *tfsdk.ModifyAttributePlanResponse) {
-	if req.AttributeConfig.IsNull() || req.AttributeState == nil || req.AttributeState.IsNull() {
+	if req.AttributeConfig.IsNull() || req.AttributeState.IsNull() || req.AttributeState.IsNull() {
 		return
 	}
 
 	config := req.AttributeConfig.(types.String)
 	state := req.AttributeState.(types.String)
 
-	if s.isEqualJSON(config.Value, state.Value) {
+	if s.isEqualJSON(config.ValueString(), state.ValueString()) {
 		resp.AttributePlan = req.AttributeState
 	}
 }

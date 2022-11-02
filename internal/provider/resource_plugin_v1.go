@@ -7,7 +7,6 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
-	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -16,9 +15,15 @@ import (
 	apiv1 "github.com/slok/terraform-provider-goplugin/pkg/api/v1"
 )
 
-type resourcePluginV1Type struct{}
+func newResourcePluginV1() resource.Resource {
+	return &resourcePluginV1{}
+}
 
-func (r resourcePluginV1Type) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+type resourcePluginV1 struct {
+	plugins map[string]apiv1.ResourcePlugin
+}
+
+func (r *resourcePluginV1) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Description: `
 Executes a Resource Go plugin v1.
@@ -67,23 +72,29 @@ Check [examples](https://github.com/slok/terraform-provider-goplugin/tree/main/e
 	}, nil
 }
 
-func (r resourcePluginV1Type) NewResource(_ context.Context, p provider.Provider) (resource.Resource, diag.Diagnostics) {
-	prv := p.(*tfProvider)
-	return resourcePluginV1{
-		p: prv,
-	}, nil
+func (r *resourcePluginV1) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_plugin_v1"
 }
 
-type resourcePluginV1 struct {
-	p *tfProvider
-}
-
-func (r resourcePluginV1) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	if !r.p.configured {
-		resp.Diagnostics.AddError("Provider not configured", "The provider hasn't been configured before apply.")
+func (r *resourcePluginV1) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+	// Prevent panic if the provider has not been configured.
+	if req.ProviderData == nil {
 		return
 	}
 
+	rd, ok := req.ProviderData.(providerInstancedResourceData)
+	if !ok {
+		resp.Diagnostics.AddError(
+			"Unexpected Data Source Configure Type",
+			fmt.Sprintf("Expected providerInstancedResourceData, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+		)
+		return
+	}
+
+	r.plugins = rd.plugins
+}
+
+func (r *resourcePluginV1) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	// Retrieve values from plan.
 	var tfResourcePlan ResourcePluginV1
 	diags := req.Plan.Get(ctx, &tfResourcePlan)
@@ -93,31 +104,31 @@ func (r resourcePluginV1) Create(ctx context.Context, req resource.CreateRequest
 	}
 
 	// Get plugin.
-	plugin, ok := r.p.resourcePluginsV1[tfResourcePlan.PluginID.Value]
+	plugin, ok := r.plugins[tfResourcePlan.PluginID.ValueString()]
 	if !ok {
-		resp.Diagnostics.AddError("Plugin missing", fmt.Sprintf("%q plugin is not loaded", tfResourcePlan.PluginID.Value))
+		resp.Diagnostics.AddError("Plugin missing", fmt.Sprintf("%q plugin is not loaded", tfResourcePlan.PluginID.ValueString()))
 		return
 	}
 
 	// Execute plugin.
-	pluginResp, err := plugin.CreateResource(ctx, apiv1.CreateResourceRequest{Attributes: tfResourcePlan.Attributes.Value})
+	pluginResp, err := plugin.CreateResource(ctx, apiv1.CreateResourceRequest{Attributes: tfResourcePlan.Attributes.ValueString()})
 	if err != nil {
 		resp.Diagnostics.AddError("Error executing plugin", "Plugin execution end in error: "+err.Error())
 		return
 	}
 
 	if pluginResp.ID == "" {
-		resp.Diagnostics.AddError("Plugin didn't return ID", fmt.Sprintf("On resource creation the plugin %q must return an ID, it didn't.", tfResourcePlan.PluginID.Value))
+		resp.Diagnostics.AddError("Plugin didn't return ID", fmt.Sprintf("On resource creation the plugin %q must return an ID, it didn't.", tfResourcePlan.PluginID.ValueString()))
 		return
 	}
 
 	// Generate terraform ID.
-	id := r.packID(tfResourcePlan.PluginID.Value, pluginResp.ID)
+	id := r.packID(tfResourcePlan.PluginID.ValueString(), pluginResp.ID)
 
 	// Map result.
 	newTfPluginV1 := ResourcePluginV1{
-		ID:         types.String{Value: id},
-		ResourceID: types.String{Value: pluginResp.ID},
+		ID:         types.StringValue(id),
+		ResourceID: types.StringValue(pluginResp.ID),
 		PluginID:   tfResourcePlan.PluginID,
 		Attributes: tfResourcePlan.Attributes,
 	}
@@ -129,12 +140,7 @@ func (r resourcePluginV1) Create(ctx context.Context, req resource.CreateRequest
 	}
 }
 
-func (r resourcePluginV1) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	if !r.p.configured {
-		resp.Diagnostics.AddError("Provider not configured", "The provider hasn't been configured before apply.")
-		return
-	}
-
+func (r *resourcePluginV1) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	// Retrieve values from state.
 	var tfResourceState ResourcePluginV1
 	diags := req.State.Get(ctx, &tfResourceState)
@@ -144,14 +150,14 @@ func (r resourcePluginV1) Read(ctx context.Context, req resource.ReadRequest, re
 	}
 
 	// Unpack ID.
-	pluginID, resourceID, err := r.unpackID(tfResourceState.ID.Value)
+	pluginID, resourceID, err := r.unpackID(tfResourceState.ID.ValueString())
 	if err != nil {
-		resp.Diagnostics.AddError("ID is wrong", fmt.Sprintf("%q id is wrong: %s", tfResourceState.ID.Value, err))
+		resp.Diagnostics.AddError("ID is wrong", fmt.Sprintf("%q id is wrong: %s", tfResourceState.ID.ValueString(), err))
 		return
 	}
 
 	// Get plugin.
-	plugin, ok := r.p.resourcePluginsV1[pluginID]
+	plugin, ok := r.plugins[pluginID]
 	if !ok {
 		resp.Diagnostics.AddError("Plugin missing", fmt.Sprintf("%q plugin is not loaded", pluginID))
 		return
@@ -167,9 +173,9 @@ func (r resourcePluginV1) Read(ctx context.Context, req resource.ReadRequest, re
 	// Map result.
 	newTfPluginV1 := ResourcePluginV1{
 		ID:         tfResourceState.ID,
-		ResourceID: types.String{Value: resourceID},
-		PluginID:   types.String{Value: pluginID},
-		Attributes: types.String{Value: pluginResp.Attributes},
+		ResourceID: types.StringValue(resourceID),
+		PluginID:   types.StringValue(pluginID),
+		Attributes: types.StringValue(pluginResp.Attributes),
 	}
 
 	diags = resp.State.Set(ctx, newTfPluginV1)
@@ -179,12 +185,7 @@ func (r resourcePluginV1) Read(ctx context.Context, req resource.ReadRequest, re
 	}
 }
 
-func (r resourcePluginV1) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	if !r.p.configured {
-		resp.Diagnostics.AddError("Provider not configured", "The provider hasn't been configured before apply.")
-		return
-	}
-
+func (r *resourcePluginV1) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Retrieve plan values.
 	var tfResourcePlan ResourcePluginV1
 	diags := req.Plan.Get(ctx, &tfResourcePlan)
@@ -202,14 +203,14 @@ func (r resourcePluginV1) Update(ctx context.Context, req resource.UpdateRequest
 	}
 
 	// Unpack ID.
-	pluginID, resourceID, err := r.unpackID(tfResourceState.ID.Value)
+	pluginID, resourceID, err := r.unpackID(tfResourceState.ID.ValueString())
 	if err != nil {
-		resp.Diagnostics.AddError("ID is wrong", fmt.Sprintf("%q id is wrong: %s", tfResourceState.ID.Value, err))
+		resp.Diagnostics.AddError("ID is wrong", fmt.Sprintf("%q id is wrong: %s", tfResourceState.ID.ValueString(), err))
 		return
 	}
 
 	// Get plugin.
-	plugin, ok := r.p.resourcePluginsV1[pluginID]
+	plugin, ok := r.plugins[pluginID]
 	if !ok {
 		resp.Diagnostics.AddError("Plugin missing", fmt.Sprintf("%q plugin is not loaded", pluginID))
 		return
@@ -218,8 +219,8 @@ func (r resourcePluginV1) Update(ctx context.Context, req resource.UpdateRequest
 	// Execute plugin.
 	_, err = plugin.UpdateResource(ctx, apiv1.UpdateResourceRequest{
 		ID:              resourceID,
-		Attributes:      tfResourcePlan.Attributes.Value,
-		AttributesState: tfResourceState.Attributes.Value,
+		Attributes:      tfResourcePlan.Attributes.ValueString(),
+		AttributesState: tfResourceState.Attributes.ValueString(),
 	})
 	if err != nil {
 		resp.Diagnostics.AddError("Error executing plugin", "Plugin execution end in error: "+err.Error())
@@ -241,12 +242,7 @@ func (r resourcePluginV1) Update(ctx context.Context, req resource.UpdateRequest
 	}
 }
 
-func (r resourcePluginV1) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	if !r.p.configured {
-		resp.Diagnostics.AddError("Provider not configured", "The provider hasn't been configured before apply.")
-		return
-	}
-
+func (r *resourcePluginV1) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	// Retrieve values from state.
 	var tfResourceState ResourcePluginV1
 	diags := req.State.Get(ctx, &tfResourceState)
@@ -256,14 +252,14 @@ func (r resourcePluginV1) Delete(ctx context.Context, req resource.DeleteRequest
 	}
 
 	// Unpack ID.
-	pluginID, resourceID, err := r.unpackID(tfResourceState.ID.Value)
+	pluginID, resourceID, err := r.unpackID(tfResourceState.ID.ValueString())
 	if err != nil {
-		resp.Diagnostics.AddError("ID is wrong", fmt.Sprintf("%q id is wrong: %s", tfResourceState.ID.Value, err))
+		resp.Diagnostics.AddError("ID is wrong", fmt.Sprintf("%q id is wrong: %s", tfResourceState.ID.ValueString(), err))
 		return
 	}
 
 	// Get plugin.
-	plugin, ok := r.p.resourcePluginsV1[pluginID]
+	plugin, ok := r.plugins[pluginID]
 	if !ok {
 		resp.Diagnostics.AddError("Plugin missing", fmt.Sprintf("%q plugin is not loaded", pluginID))
 		return
@@ -280,16 +276,16 @@ func (r resourcePluginV1) Delete(ctx context.Context, req resource.DeleteRequest
 	resp.State.RemoveResource(ctx)
 }
 
-func (r resourcePluginV1) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (r *resourcePluginV1) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	// Save the import identifier in the id attribute.
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
-func (r resourcePluginV1) packID(pluginID, resourceID string) string {
+func (r *resourcePluginV1) packID(pluginID, resourceID string) string {
 	return pluginID + "/" + resourceID
 }
 
-func (r resourcePluginV1) unpackID(id string) (pluginID, resourceID string, err error) {
+func (r *resourcePluginV1) unpackID(id string) (pluginID, resourceID string, err error) {
 	s := strings.SplitN(id, "/", 2)
 	if len(s) != 2 {
 		return "", "", fmt.Errorf(

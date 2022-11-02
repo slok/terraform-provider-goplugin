@@ -9,7 +9,7 @@
 
 ### Added
 
-- Added 3rd party dependencies support using `vendor` directory.
+- 3rd party dependencies support using `vendor` directory.
 
 ## [v0.4.0] - 2022-08-24
 

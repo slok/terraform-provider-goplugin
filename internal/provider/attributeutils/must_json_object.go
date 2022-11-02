@@ -25,12 +25,12 @@ func (m mustJSONObject) Validate(ctx context.Context, req tfsdk.ValidateAttribut
 		return
 	}
 
-	if s.Unknown || s.Null {
+	if s.IsUnknown() || s.IsNull() {
 		return
 	}
 
 	var o any
-	if err := json.Unmarshal([]byte(s.Value), &o); err != nil {
+	if err := json.Unmarshal([]byte(s.ValueString()), &o); err != nil {
 		resp.Diagnostics.AddError(req.AttributePath.String(), "Attribute must be JSON object")
 		return
 	}
