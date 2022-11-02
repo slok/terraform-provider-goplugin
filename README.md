@@ -10,6 +10,13 @@ A Terraform provider to create terraform providers 🤯, but easier and faster!
 
 Terraform go plugin provider is a Terraform provider that will let you execute Go plugins (using [yaegi]) in terraform by implementing a very simple and small Go API.
 
+## Features
+
+- Implement Terraform providers using small Go plugins.
+- Go Plugin code doesn't require compilation.
+- Supports plugin 3rd party dependencies using Go `vendor` dir.
+- compatible with [Terraform cloud](https://app.terraform.io/).
+
 ## Why
 
 Sometimes I want to manage resources in Terraform that don't have a provider, however, creating a Terraform provider takes time and a lot of effort, including understanding low level concepts. So this poor resource will not end in Terraform.
@@ -31,12 +38,11 @@ Unless... in the cases where we don't need to manage tons of resources or its a 
 
 - You need performance, interpreted code will be less efficient and slower.
 - Your provider is complex and with tons of resources.
-- You need Go third party libraries (this smells like a complex use case).
 - You need to provide official Terraform support for a product.
 
 ## Examples
 
-Check [examples](./examples)
+The best way of how to use it is by checking the [examples](./examples).
 
 ## Plugins `v1`
 
@@ -130,13 +136,14 @@ in a datasource.
 ### Plugin design and limitations
 
 Plugin have some limitations, some imposed by the engine itself, [Yaegi], and other ones imposed by this provider
-design in favor of simplicity and portability:
+design in favor of UX, simplicity and portability:
 
-- No third party packages (external libraries) supported.
-- Flat source code (no nested packages) and in a single package.
-- Allow splitting code in multiple files.
 - Small and simple API: Less features, more reliable and easy to maintain.
-- Automatically ignore plugin tests (package `_test`) on plugin load.
+- Plugin must point to the source code root.
+- Source code root must be a valid go module (`go.mod`).
+- If 3rd party dependencies are used, they must be on `vendor` package (use `go mod vendor`).
+- Plugin factory can be customized to have multiple plugins on the same go module codebase (e.g `NewPlugin1`, `NewPlugin2`...).
+- Plugin factory must be on the root of the go module.
 
 ### JSON input/output
 

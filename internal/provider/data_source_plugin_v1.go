@@ -8,17 +8,23 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
-	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
 	"github.com/slok/terraform-provider-goplugin/internal/provider/attributeutils"
+	apiv1 "github.com/slok/terraform-provider-goplugin/pkg/api/v1"
 	v1 "github.com/slok/terraform-provider-goplugin/pkg/api/v1"
 )
 
-type dataSourcePluginV1Type struct{}
+func newDataSourcePluginV1() datasource.DataSource {
+	return &dataSourcePluginV1{}
+}
 
-func (d dataSourcePluginV1Type) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
+type dataSourcePluginV1 struct {
+	plugins map[string]apiv1.DataSourcePlugin
+}
+
+func (d *dataSourcePluginV1) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
 		Description: `
 Executes a Data source Go plugin v1.
@@ -59,23 +65,29 @@ Check [examples](https://github.com/slok/terraform-provider-goplugin/tree/main/e
 	}, nil
 }
 
-func (d dataSourcePluginV1Type) NewDataSource(ctx context.Context, p provider.Provider) (datasource.DataSource, diag.Diagnostics) {
-	prv := p.(*tfProvider)
-	return dataSourcePluginV1{
-		p: prv,
-	}, nil
+func (d *dataSourcePluginV1) Metadata(ctx context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_plugin_v1"
 }
 
-type dataSourcePluginV1 struct {
-	p *tfProvider
-}
-
-func (d dataSourcePluginV1) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	if !d.p.configured {
-		resp.Diagnostics.AddError("Provider not configured", "The provider hasn't been configured before apply.")
+func (d *dataSourcePluginV1) Configure(ctx context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+	// Prevent panic if the provider has not been configured.
+	if req.ProviderData == nil {
 		return
 	}
 
+	dsd, ok := req.ProviderData.(providerInstancedDataSourceData)
+	if !ok {
+		resp.Diagnostics.AddError(
+			"Unexpected Data Source Configure Type",
+			fmt.Sprintf("Expected providerInstancedResourceData, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+		)
+		return
+	}
+
+	d.plugins = dsd.plugins
+}
+
+func (d *dataSourcePluginV1) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	// Retrieve values from config.
 	var tfConfig DataSourcePluginV1
 	diags := req.Config.Get(ctx, &tfConfig)
@@ -85,15 +97,15 @@ func (d dataSourcePluginV1) Read(ctx context.Context, req datasource.ReadRequest
 	}
 
 	// Get plugin.
-	plugin, ok := d.p.dataSourcePluginsV1[tfConfig.PluginID.Value]
+	plugin, ok := d.plugins[tfConfig.PluginID.ValueString()]
 	if !ok {
-		resp.Diagnostics.AddError("Plugin missing", fmt.Sprintf("%q plugin is not loaded", tfConfig.PluginID.Value))
+		resp.Diagnostics.AddError("Plugin missing", fmt.Sprintf("%q plugin is not loaded", tfConfig.PluginID.ValueString()))
 		return
 	}
 
 	// Execute plugin.
 	pluginResp, err := plugin.ReadDataSource(ctx, v1.ReadDataSourceRequest{
-		Attributes: tfConfig.Attributes.Value,
+		Attributes: tfConfig.Attributes.ValueString(),
 	})
 	if err != nil {
 		resp.Diagnostics.AddError("Error executing plugin", "Plugin execution end in error: "+err.Error())
@@ -101,10 +113,10 @@ func (d dataSourcePluginV1) Read(ctx context.Context, req datasource.ReadRequest
 	}
 
 	// Map result.
-	tfConfig.Result = types.String{Value: pluginResp.Result}
+	tfConfig.Result = types.StringValue(pluginResp.Result)
 
 	// Force execution every time.
-	tfConfig.ID = types.String{Value: strconv.Itoa(int(time.Now().UnixNano()))}
+	tfConfig.ID = types.StringValue(strconv.Itoa(int(time.Now().UnixNano())))
 
 	diags = resp.State.Set(ctx, tfConfig)
 	resp.Diagnostics.Append(diags...)

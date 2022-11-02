@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
+	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
@@ -22,17 +24,14 @@ func New() provider.Provider {
 	return &tfProvider{}
 }
 
-type tfProvider struct {
-	configured bool
-
-	resourcePluginsV1   map[string]apiv1.ResourcePlugin
-	dataSourcePluginsV1 map[string]apiv1.DataSourcePlugin
-}
+type tfProvider struct{}
 
 var (
 	pluginSourceCodeAttribute = tfsdk.Attribute{
-		Required:    true,
-		Description: `Configuration regarding where the plugin code will be loaded from. Only one must be used of all the methods available`,
+		Required: true,
+		Description: `Configuration regarding where the plugin code will be loaded from.
+		The plugin must be a valid go module ` + "(`go.mod`)" + ` and be available in the root this module.
+		Only one of the source code retrieval methods must be used.`,
 		Attributes: tfsdk.SingleNestedAttributes(map[string]tfsdk.Attribute{
 			"dir": {
 				Optional:    true,
@@ -54,7 +53,7 @@ var (
 						Description: `Reference of the the repository, only Branch and tags are supported.`,
 						Type:        types.StringType,
 						// TODO(slok): Provider config doesn't support plan modifiers, set default on `Configure` until are supported.
-						// PlanModifiers: tfsdk.AttributePlanModifiers{attributeutils.DefaultValue(types.String{Value: "main"})},
+						// PlanModifiers: tfsdk.AttributePlanModifiers{attributeutils.DefaultValue(types.StringValue("main"))},
 					},
 					"dir": {
 						Optional:    true,
@@ -91,6 +90,10 @@ var (
 	}
 )
 
+func (p *tfProvider) Metadata(_ context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
+	resp.TypeName = "goplugin"
+}
+
 // GetSchema returns the schema that the user must configure on the provider block.
 func (p *tfProvider) GetSchema(_ context.Context) (tfsdk.Schema, diag.Diagnostics) {
 	return tfsdk.Schema{
@@ -116,7 +119,7 @@ Terraform go plugin provider is a Terraform provider that will let you execute G
 							"specially helpful when a package has multiple plugins inside the same package so it can reuse parts of the code between all the plugins.",
 						Type: types.StringType,
 						// TODO(slok): Provider config doesn't support plan modifiers, set default on `Configure` until are supported.
-						// PlanModifiers: tfsdk.AttributePlanModifiers{attributeutils.DefaultValue(types.String{Value: "NewResourcePlugin"})},
+						// PlanModifiers: tfsdk.AttributePlanModifiers{attributeutils.DefaultValue(types.StringValue("NewResourcePlugin"))},
 					},
 				}),
 			},
@@ -132,7 +135,7 @@ Terraform go plugin provider is a Terraform provider that will let you execute G
 							"specially helpful when a package has multiple plugins inside the same package so it can reuse parts of the code between all the plugins.",
 						Type: types.StringType,
 						// TODO(slok): Provider config doesn't support plan modifiers, set default on `Configure` until are supported.
-						// PlanModifiers: tfsdk.AttributePlanModifiers{attributeutils.DefaultValue(types.String{Value: "NewDataSourcePlugin"})},
+						// PlanModifiers: tfsdk.AttributePlanModifiers{attributeutils.DefaultValue(types.StringValue("NewDataSourcePlugin"))},
 					},
 				}),
 			},
@@ -201,21 +204,28 @@ func (p *tfProvider) Configure(ctx context.Context, req provider.ConfigureReques
 		dataSourcePlugins[pluginID] = plugin
 	}
 
-	p.configured = true
-	p.resourcePluginsV1 = resourcePlugins
-	p.dataSourcePluginsV1 = dataSourcePlugins
+	resp.DataSourceData = providerInstancedDataSourceData{plugins: dataSourcePlugins}
+	resp.ResourceData = providerInstancedResourceData{plugins: resourcePlugins}
 }
 
-func (p *tfProvider) GetResources(_ context.Context) (map[string]provider.ResourceType, diag.Diagnostics) {
-	return map[string]provider.ResourceType{
-		"goplugin_plugin_v1": resourcePluginV1Type{},
-	}, nil
+type providerInstancedResourceData struct {
+	plugins map[string]apiv1.ResourcePlugin
 }
 
-func (p *tfProvider) GetDataSources(_ context.Context) (map[string]provider.DataSourceType, diag.Diagnostics) {
-	return map[string]provider.DataSourceType{
-		"goplugin_plugin_v1": dataSourcePluginV1Type{},
-	}, nil
+type providerInstancedDataSourceData struct {
+	plugins map[string]apiv1.DataSourcePlugin
+}
+
+func (p *tfProvider) Resources(_ context.Context) []func() resource.Resource {
+	return []func() resource.Resource{
+		newResourcePluginV1,
+	}
+}
+
+func (p *tfProvider) DataSources(_ context.Context) []func() datasource.DataSource {
+	return []func() datasource.DataSource{
+		newDataSourcePluginV1,
+	}
 }
 
 func (p *tfProvider) loadAPIV1ResourcePlugin(ctx context.Context, pluginFactory *pluginv1.Engine, pluginConfig providerDataPluginV1) (apiv1.ResourcePlugin, error) {
@@ -225,7 +235,7 @@ func (p *tfProvider) loadAPIV1ResourcePlugin(ctx context.Context, pluginFactory 
 	}
 
 	// TODO(slok): Remove when plan modifiers are supported on provider configuration attributes.
-	factoryName := pluginConfig.FactoryName.Value
+	factoryName := pluginConfig.FactoryName.ValueString()
 	if factoryName == "" {
 		factoryName = apiv1.DefaultResourcePluginFactoryName
 	}
@@ -233,7 +243,7 @@ func (p *tfProvider) loadAPIV1ResourcePlugin(ctx context.Context, pluginFactory 
 	plugin, err := pluginFactory.NewResourcePlugin(ctx, pluginv1.PluginConfig{
 		SourceCodeRepository: repo,
 		PluginFactoryName:    factoryName,
-		PluginOptions:        pluginConfig.Configuration.Value,
+		PluginOptions:        pluginConfig.Configuration.ValueString(),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("error loading plugin: %w", err)
@@ -249,7 +259,7 @@ func (p *tfProvider) loadAPIV1DataSourcePlugin(ctx context.Context, pluginFactor
 	}
 
 	// TODO(slok): Remove when plan modifiers are supported on provider configuration attributes.
-	factoryName := pluginConfig.FactoryName.Value
+	factoryName := pluginConfig.FactoryName.ValueString()
 	if factoryName == "" {
 		factoryName = apiv1.DefaultDataSourcePluginFactoryName
 	}
@@ -257,7 +267,7 @@ func (p *tfProvider) loadAPIV1DataSourcePlugin(ctx context.Context, pluginFactor
 	plugin, err := pluginFactory.NewDataSourcePlugin(ctx, pluginv1.PluginConfig{
 		SourceCodeRepository: repo,
 		PluginFactoryName:    factoryName,
-		PluginOptions:        pluginConfig.Configuration.Value,
+		PluginOptions:        pluginConfig.Configuration.ValueString(),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("error loading plugin from source code: %w", err)
@@ -270,14 +280,14 @@ func (p *tfProvider) loadAPIV1PluginSourceCode(ctx context.Context, pluginConfig
 	// Select the source repo based on the configuration.
 	switch {
 	// Source code from fs dir.
-	case pluginConfig.Dir.Value != "":
-		realFS := os.DirFS(pluginConfig.Dir.Value)
+	case pluginConfig.Dir.ValueString() != "":
+		realFS := os.DirFS(pluginConfig.Dir.ValueString())
 		return moduledir.NewSourceCodeRepository(realFS)
 
 	// Source code from Git repository
 	case pluginConfig.Git != nil:
 		// TODO(slok): Remove when plan modifiers are supported on provider configuration attributes.
-		ref := pluginConfig.Git.Ref.Value
+		ref := pluginConfig.Git.Ref.ValueString()
 		if ref == "" {
 			ref = "main"
 		}
@@ -285,9 +295,9 @@ func (p *tfProvider) loadAPIV1PluginSourceCode(ctx context.Context, pluginConfig
 		username, password := p.getGithubCredentials(pluginConfig.Git.Auth)
 
 		gitRepo, err := storagegit.NewSourceCodeRepository(storagegit.SourceCodeRepositoryConfig{
-			URL:          pluginConfig.Git.URL.Value,
+			URL:          pluginConfig.Git.URL.ValueString(),
 			BranchOrTag:  ref,
-			Dir:          pluginConfig.Git.Dir.Value,
+			Dir:          pluginConfig.Git.Dir.ValueString(),
 			AuthUsername: username,
 			AuthPassword: password,
 		})
@@ -312,11 +322,11 @@ func (p *tfProvider) getGithubCredentials(auth *providerDataPluginV1SourceGitAut
 	password = os.Getenv("GOPLUGIN_GIT_PASSWORD")
 
 	// If we have explicit config, this has priority over env vars.
-	cfgUser := auth.Username.Value
+	cfgUser := auth.Username.ValueString()
 	if cfgUser != "" {
 		username = cfgUser
 	}
-	cfgPassword := auth.Password.Value
+	cfgPassword := auth.Password.ValueString()
 	if cfgPassword != "" {
 		password = cfgPassword
 	}

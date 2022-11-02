@@ -20,11 +20,11 @@ func (n nonEmptyString) Validate(ctx context.Context, req tfsdk.ValidateAttribut
 		return
 	}
 
-	if s.Unknown || s.Null {
+	if s.IsUnknown() || s.IsNull() {
 		return
 	}
 
-	if s.Value == "" {
+	if s.ValueString() == "" {
 		resp.Diagnostics.AddError(req.AttributePath.String(), "Attribute can't be empty")
 	}
 }

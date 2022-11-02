@@ -22,24 +22,24 @@ func TestDefaultValue(t *testing.T) {
 		expErr      bool
 	}{
 		"Value with config should not default.": {
-			configValue: types.String{Value: "This is a value"},
-			planValue:   types.String{Value: "This is a value"},
-			defValue:    types.String{Value: "This is a default value"},
-			expValue:    types.String{Value: "This is a value"},
+			configValue: types.StringValue("This is a value"),
+			planValue:   types.StringValue("This is a value"),
+			defValue:    types.StringValue("This is a default value"),
+			expValue:    types.StringValue("This is a value"),
 		},
 
 		"Null config should default.": {
-			configValue: types.String{Null: true},
-			planValue:   types.String{Null: true},
-			defValue:    types.String{Value: "This is a default value"},
-			expValue:    types.String{Value: "This is a default value"},
+			configValue: types.StringNull(),
+			planValue:   types.StringNull(),
+			defValue:    types.StringValue("This is a default value"),
+			expValue:    types.StringValue("This is a default value"),
 		},
 
 		"Not null plan should not default.": {
-			configValue: types.String{Null: true},
-			planValue:   types.String{Value: "This is a value"},
-			defValue:    types.String{Value: "This is a default value"},
-			expValue:    types.String{Value: "This is a value"},
+			configValue: types.StringNull(),
+			planValue:   types.StringValue("This is a value"),
+			defValue:    types.StringValue("This is a default value"),
+			expValue:    types.StringValue("This is a value"),
 		},
 	}
 	for name, test := range tests {

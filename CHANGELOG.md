@@ -2,31 +2,40 @@
 
 ## [Unreleased]
 
+## Breaking
+
+- File based plugins have been removed in favor of go modules.
+- Plugins must be directories and be a valid go module (`go.mod`).
+
+### Added
+
+- 3rd party dependencies support using `vendor` directory.
+
 ## [v0.4.0] - 2022-08-24
 
-## Breaking
+### Breaking
 
 - `NewTestResourcePlugin` now receives a config struct as parameters with and will set safe defaults.
 - `NewTestDataSourcePlugin` now receives a config struct as parameters with and will set safe defaults.
 
-## Added
+### Added
 
 - Git authentication using basic auth on plugin's source code.
 
 ## [v0.3.0] - 2022-08-23
 
-## Beaking
+### Beaking
 
 - On `plugin_v1` resources, `resource_data` renamed to `attributes`.
 - On `plugin_v1` data source, `arguments` renamed to `attributes`.
 
-## Added
+### Added
 
 - Plugins can customize the name of the plugin factory that the plugin engine will use to make plugin instances.
 
 ## [v0.2.0] - 2022-08-21
 
-## Added
+### Added
 
 - `resource_id` attribute (The one without the plugin ID).
 - `plugin_v1` data source.
@@ -35,7 +44,7 @@
 
 ## [v0.1.1] - 2022-08-18
 
-## Fixed
+### Fixed
 
 - Terraform import docs.
 
