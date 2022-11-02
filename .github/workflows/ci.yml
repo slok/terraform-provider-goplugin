@@ -10,6 +10,7 @@ jobs:
     name: Check docs
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v3
       - uses: actions/setup-go@v3
         with:
           go-version-file: go.mod
@@ -17,7 +18,6 @@ jobs:
         with:
           terraform_version: ${{ matrix.terraform }}
           terraform_wrapper: false
-      - uses: actions/checkout@v3
       - name: Check docs up to date
         run: |
           cd /tmp
@@ -39,6 +39,7 @@ jobs:
     name: Unit Tests
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v3
       - uses: actions/setup-go@v3
         with:
           go-version-file: go.mod
@@ -46,11 +47,11 @@ jobs:
         with:
           terraform_version: ${{ matrix.terraform }}
           terraform_wrapper: false
-      - uses: actions/checkout@v3
       - run: make test
 
   acceptance-test:
     name: Acceptance Tests
+    needs: [check-docs, lint, unit-test]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -62,6 +63,7 @@ jobs:
           - '1.3.*'
           - 'latest'
     steps:
+      - uses: actions/checkout@v3
       - uses: actions/setup-go@v3
         with:
           go-version-file: go.mod
@@ -69,5 +71,4 @@ jobs:
         with:
           terraform_version: ${{ matrix.terraform }}
           terraform_wrapper: false
-      - uses: actions/checkout@v3
       - run: make testacc
