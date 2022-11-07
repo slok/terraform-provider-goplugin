@@ -29,10 +29,18 @@ func TestSourceCodeRepository(t *testing.T) {
 			expErr: true,
 		},
 
-		"Cloning a repo by matching multiple files should return the data.": {
+		"Cloning a repo by matching multiple files should return a valid plugin FS.": {
 			config: git.SourceCodeRepositoryConfig{
 				URL:         "https://github.com/oklog/run",
 				BranchOrTag: "v1.1.0",
+			},
+		},
+
+		"Cloning a repo specifying a dir should return a valid plugin FS.": {
+			config: git.SourceCodeRepositoryConfig{
+				URL:         "https://github.com/slok/terraform-provider-goplugin",
+				BranchOrTag: "v0.5.0",
+				Dir:         "/examples/with_dependencies/plugins/murmur3",
 			},
 		},
 	}

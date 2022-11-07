@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Git source code plugins using `dir` option now will load correctly the module instead of failing always.
+
+
 ## [v0.5.0] - 2022-11-02
 
 ## Breaking

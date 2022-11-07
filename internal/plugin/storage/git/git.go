@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/fs"
 	"path"
+	"strings"
 	"testing/fstest"
 
 	"github.com/go-git/go-billy/v5"
@@ -41,7 +42,7 @@ func (c *SourceCodeRepositoryConfig) defaults() error {
 	}
 
 	if !path.IsAbs(c.Dir) {
-		return fmt.Errorf("repo dir should be absolute from the repo root")
+		return fmt.Errorf("repo dir should be an absolute path using the repo root as the root of the dir path")
 	}
 
 	return nil
@@ -69,16 +70,17 @@ func NewSourceCodeRepository(config SourceCodeRepositoryConfig) (storage.SourceC
 			return nil
 		}
 
-		relPath := path[1:]
-
 		// Append data file.
 		data, err := util.ReadFile(repoFS, path)
 		if err != nil {
 			return fmt.Errorf("could not read git file: %w", err)
 		}
 
-		mapFS[relPath] = &fstest.MapFile{Data: data}
+		// Set the path as relative root (sanitized).
+		rootPath := strings.TrimPrefix(path, config.Dir)
+		rootPath = strings.Trim(rootPath, "/")
 
+		mapFS[rootPath] = &fstest.MapFile{Data: data}
 		return nil
 	})
 	if err != nil {
