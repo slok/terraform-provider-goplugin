@@ -9,7 +9,7 @@ require (
 	github.com/hashicorp/terraform-plugin-go v0.14.0
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.24.0
 	github.com/stretchr/testify v1.8.1
-	github.com/traefik/yaegi v0.14.3
+	github.com/traefik/yaegi v0.15.0
 )
 
 require (
